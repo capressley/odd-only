@@ -22,7 +22,7 @@
       display: none;
       flex-direction: column;
       align-items: center;
-      gap: 1.2rem;
+      gap: 14px;
       width: 100%;
       padding: 16px;
       box-sizing: border-box;
@@ -49,44 +49,63 @@
 
     .number {
       font-size: 6rem;
-      font-weight: 800;
-      margin: 0;
+      font-weight: 900;
+      margin: 10px 0 0 0;
       line-height: 1;
+      text-shadow: 0 0 28px rgba(0,255,140,0.25);
+    }
+
+    .hud {
+      opacity: 0.85;
+      font-size: 1.1rem;
+      margin-bottom: 6px;
     }
 
     .hint {
       opacity: 0.85;
       font-size: 1rem;
       max-width: 520px;
+      line-height: 1.35;
     }
   </style>
 </head>
 
 <body>
 
-  <!-- WELCOME SCREEN -->
+  <!-- WELCOME -->
   <div id="welcome" class="screen active">
-    <img src="file_00000009e2071f8af64e901b2658e3f.png" alt="Odd-Only Arcade">
+    <img id="welcomeImg" src="./file_00000009e2071f8af64e901b2658e3f.png" alt="Odd-Only Arcade">
     <div class="hint">
-      Tap ONLY when the number is odd. Tap on even and it’s game over.
+      <b>How to play:</b><br>
+      Tap the button ONLY when the number is odd.<br>
+      Tap on an even number and the game ends.
     </div>
     <button id="startBtn">START</button>
+    <div id="imgStatus" class="hint"></div>
   </div>
 
-  <!-- GAME SCREEN -->
+  <!-- GAME -->
   <div id="game" class="screen">
+    <div class="hud">Tap ONLY if odd</div>
     <div id="number" class="number">?</div>
-    <button id="tapBtn">Tap ONLY if odd</button>
+    <button id="tapBtn">TAP</button>
   </div>
 
-  <!-- GAME OVER SCREEN -->
+  <!-- GAME OVER -->
   <div id="gameOver" class="screen">
-    <img src="file_00000009e2071f8af64e901b2658e3f.png" alt="Game Over">
+    <img id="overImg" src="./file_00000009e2071f8af64e901b2658e3f.png" alt="Game Over">
     <div class="hint">Game over.</div>
     <button id="restartBtn">PLAY AGAIN</button>
   </div>
 
 <script>
+  // HARD STOP: remove any service worker caching that might be breaking things
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      regs.forEach(r => r.unregister());
+    });
+  }
+
   const welcome = document.getElementById("welcome");
   const game = document.getElementById("game");
   const gameOver = document.getElementById("gameOver");
@@ -95,6 +114,10 @@
   const startBtn = document.getElementById("startBtn");
   const tapBtn = document.getElementById("tapBtn");
   const restartBtn = document.getElementById("restartBtn");
+
+  const imgStatus = document.getElementById("imgStatus");
+  const welcomeImg = document.getElementById("welcomeImg");
+  const overImg = document.getElementById("overImg");
 
   let current = 0;
 
@@ -127,12 +150,19 @@
     show(welcome);
   });
 
-  // Register service worker (safe) with cache-buster
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js?v=7");
-    });
-  }
+  // Debug info for the image (so we can SEE what’s wrong)
+  welcomeImg.addEventListener("load", () => {
+    imgStatus.textContent = "✅ Welcome image loaded.";
+  });
+  welcomeImg.addEventListener("error", () => {
+    imgStatus.textContent =
+      "❌ Welcome image failed to load. This usually means the filename/path is wrong or GitHub Pages hasn't updated yet.";
+  });
+
+  overImg.addEventListener("error", () => {
+    // If welcome loads but gameover doesn't, we still want to know
+    console.log("Game-over image failed to load.");
+  });
 </script>
 
 </body>
