@@ -101,6 +101,7 @@ button{
   <div id="number">—</div>
 
   <button id="tapBtn">Tap ONLY if odd</button>
+  <button id="shareBtn" class="secondary">Share score</button>
   <div id="gameMsg" class="toast"></div>
 </div>
 
@@ -109,8 +110,6 @@ button{
   <img src="welcome.png" alt="Odd-Only Arcade">
   <h1>Game Over</h1>
   <p>Final score: <b id="finalScore">0</b></p>
-
-  <button id="shareFinalBtn" class="secondary">Share score</button>
   <button id="againBtn">Play Again</button>
 </div>
 
@@ -122,8 +121,8 @@ const over = document.getElementById("over");
 
 const startBtn = document.getElementById("startBtn");
 const tapBtn = document.getElementById("tapBtn");
+const shareBtn = document.getElementById("shareBtn");
 const againBtn = document.getElementById("againBtn");
-const shareFinalBtn = document.getElementById("shareFinalBtn");
 
 const numberEl = document.getElementById("number");
 const scoreEl = document.getElementById("score");
@@ -138,9 +137,9 @@ let current = null;
 let timer = null;
 let running = false;
 
-/* ---------- SPEED CONTROL ---------- */
+/* ---------- SPEED CONTROL (EDIT THIS) ---------- */
 function nextDelayMs(){
-  const base = 950;                 // increase to slow down
+  const base = 950;                 // ← increase to slow down
   const jitter = Math.random() * 400 - 200;
   return Math.max(600, base + jitter);
 }
@@ -198,10 +197,10 @@ tapBtn.onclick = () => {
   scoreEl.textContent = score;
 };
 
-shareFinalBtn.onclick = () => {
+shareBtn.onclick = () => {
   const text = `Odd-Only Arcade — I scored ${score}. Can you beat it? ${location.href}`;
   if(navigator.share){
-    navigator.share({ title:"Odd-Only Arcade", text });
+    navigator.share({title:"Odd-Only Arcade", text});
   } else {
     navigator.clipboard.writeText(text);
     msgEl.textContent = "Score copied.";
