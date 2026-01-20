@@ -1,27 +1,74 @@
-<script>
-  let current = 0;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Odd-Only Reaction Game</title>
 
-  function nextNumber() {
-    current = Math.floor(Math.random() * 9) + 1;
-    document.getElementById("number").textContent = current;
-  }
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <meta name="theme-color" content="#111111" />
 
-  document.getElementById("tap").addEventListener("click", () => {
-    if (current % 2 === 1) {
-      nextNumber();
-    } else {
-      alert("❌ Even number! Game over.");
-      current = 0;
-      document.getElementById("number").textContent = "-";
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: #111;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
     }
-  });
+    .number {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+    button {
+      font-size: 2rem;
+      padding: 1.2rem 2rem;
+      border-radius: 12px;
+      border: 0;
+      background: #22c55e;
+      color: #000;
+      font-weight: 700;
+    }
+  </style>
+</head>
 
-  nextNumber();
+<body>
+  <div>
+    <div class="number" id="number">—</div>
+    <button id="tap">Tap ONLY if odd</button>
+  </div>
 
-  // PWA service worker (GitHub Pages–safe path)
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/odd-only/sw.js");
+  <script>
+    let current = 0;
+
+    function nextNumber() {
+      current = Math.floor(Math.random() * 9) + 1; // 1..9
+      document.getElementById("number").textContent = current;
+    }
+
+    document.getElementById("tap").addEventListener("click", () => {
+      if (current % 2 === 1) {
+        nextNumber();
+      } else {
+        alert("❌ Even number! Game over.");
+        current = 0;
+        document.getElementById("number").textContent = "—";
+      }
     });
-  }
-</script>
+
+    nextNumber();
+
+    // Register SW safely for GitHub Pages project sites
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
