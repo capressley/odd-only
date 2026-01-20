@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Odd-Only Arcade</title>
 
-  <!-- PWA -->
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#111111" />
 
@@ -23,12 +22,7 @@
       justify-content: center;
       padding: 18px;
     }
-
-    .app {
-      width: min(520px, 100%);
-      text-align: center;
-    }
-
+    .app { width: min(520px, 100%); text-align: center; }
     .card {
       background: rgba(0,0,0,.55);
       border: 1px solid rgba(255,255,255,.12);
@@ -37,7 +31,6 @@
       box-shadow: 0 14px 40px rgba(0,0,0,.55);
       backdrop-filter: blur(6px);
     }
-
     .hidden { display: none !important; }
 
     .title {
@@ -47,14 +40,7 @@
       font-size: 22px;
       text-transform: uppercase;
     }
-
-    .sub {
-      opacity: .9;
-      line-height: 1.35;
-      margin: 8px 0 14px;
-      font-size: 15px;
-    }
-
+    .sub { opacity: .9; line-height: 1.35; margin: 8px 0 14px; font-size: 15px; }
     .hero {
       width: 100%;
       border-radius: 14px;
@@ -63,15 +49,7 @@
       border: 1px solid rgba(255,255,255,.10);
       background: #111;
     }
-
-    .row {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-top: 10px;
-    }
-
+    .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
     .pill {
       display: inline-flex;
       align-items: center;
@@ -83,13 +61,7 @@
       font-weight: 700;
       font-size: 14px;
     }
-
-    .value {
-      font-variant-numeric: tabular-nums;
-      font-weight: 900;
-      font-size: 16px;
-    }
-
+    .value { font-variant-numeric: tabular-nums; font-weight: 900; font-size: 16px; }
     .number {
       font-size: 84px;
       font-weight: 900;
@@ -98,7 +70,6 @@
       font-variant-numeric: tabular-nums;
       text-shadow: 0 8px 30px rgba(0,0,0,.55);
     }
-
     button {
       appearance: none;
       border: none;
@@ -123,7 +94,6 @@
       border-radius: 12px;
       box-shadow: none;
     }
-
     .danger { color: #ff6262; font-weight: 800; }
     .muted { opacity: .85; }
 
@@ -144,6 +114,7 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      z-index: 9999;
     }
     .toast.show { opacity: 1; }
 
@@ -154,12 +125,7 @@
       font-variant-numeric: tabular-nums;
     }
 
-    .leaderboard {
-      margin-top: 12px;
-      text-align: left;
-      font-size: 14px;
-      opacity: .95;
-    }
+    .leaderboard { margin-top: 12px; text-align: left; font-size: 14px; opacity: .95; }
     .leaderboard h3 {
       margin: 10px 0 6px;
       font-size: 14px;
@@ -178,6 +144,20 @@
       font-variant-numeric: tabular-nums;
     }
     .lbRow span:first-child { font-weight: 900; }
+
+    input {
+      width: 120px;
+      text-transform: uppercase;
+      text-align: center;
+      font-size: 22px;
+      font-weight: 900;
+      border-radius: 12px;
+      padding: 10px;
+      border: 1px solid rgba(255,255,255,.2);
+      background: rgba(255,255,255,.08);
+      color: #fff;
+      outline: none;
+    }
   </style>
 </head>
 
@@ -191,14 +171,14 @@
       <div class="sub">
         Tap the button <b>ONLY</b> when the number is <b>odd</b>.<br/>
         If you miss an odd number, you lose <b>1 point</b>.<br/>
-        Tap on an even number and you get a <b>strike</b>.<br/>
+        Tap an even number = <b>strike</b>.<br/>
         <b>3 strikes</b> and the game ends.
       </div>
       <div class="row">
-        <button id="btnStart">START</button>
+        <button id="btnStart" type="button">START</button>
       </div>
       <div id="welcomeImgErr" class="sub danger hidden" style="margin-top:10px;">
-        ❌ Welcome image failed to load. Make sure the file is named <b>welcome.png</b> in the repo root.
+        ❌ Welcome image failed to load. Confirm the file is named <b>welcome.png</b> in the repo root.
       </div>
     </section>
 
@@ -213,16 +193,16 @@
       <div id="number" class="number">—</div>
 
       <div class="row">
-        <button id="tap">Tap ONLY if odd</button>
+        <button id="tap" type="button">Tap ONLY if odd</button>
       </div>
 
       <div class="row">
-        <button id="btnShare" class="secondary">Share score</button>
-        <button id="btnQuit" class="secondary">Quit</button>
+        <button id="btnShare" class="secondary" type="button">Share score</button>
+        <button id="btnQuit" class="secondary" type="button">Quit</button>
       </div>
 
       <div class="sub muted" style="margin-top:10px;">
-        Numbers are 1–999, changing at an erratic cadence (but not speeding up).
+        Numbers are 1–999, changing at an erratic cadence (no speed-up).
       </div>
     </section>
 
@@ -232,21 +212,15 @@
       <div class="title">Game Over</div>
       <div class="endScore">Score: <span id="finalScore">0</span></div>
 
-      <div class="sub">
-        Enter initials (1–3 letters) to save your score:
-      </div>
+      <div class="sub">Enter initials (1–3 letters) to save your score on this device:</div>
 
       <div class="row" style="margin-bottom:10px;">
-        <input id="initials" maxlength="3" inputmode="text" autocomplete="off"
-               style="width:120px;text-transform:uppercase;text-align:center;
-                      font-size:22px;font-weight:900;border-radius:12px;
-                      padding:10px;border:1px solid rgba(255,255,255,.2);
-                      background:rgba(255,255,255,.08);color:#fff;" />
-        <button id="btnSave" class="secondary">Save</button>
+        <input id="initials" maxlength="3" inputmode="text" autocomplete="off" />
+        <button id="btnSave" class="secondary" type="button">Save</button>
       </div>
 
       <div class="row">
-        <button id="btnPlayAgain">Play again</button>
+        <button id="btnPlayAgain" type="button">Play again</button>
       </div>
 
       <div class="leaderboard" id="leaderboard"></div>
@@ -257,23 +231,22 @@
   <div id="toast" class="toast"></div>
 
   <script>
+    // ================== SAFETY WRAPPER (prevents silent crashes) ==================
+    window.addEventListener("error", (e) => {
+      const msg = e?.message ? `JS Error: ${e.message}` : "JS Error";
+      safeToast(msg);
+    });
+
     // ---------- SETTINGS ----------
     const MAX_STRIKES = 3;
     const MIN_NUM = 1;
     const MAX_NUM = 999;
 
-    // cadence: erratic but not speeding up
-    const MIN_MS = 450;   // slower
-    const MAX_MS = 950;   // erratic
+    // slower, erratic cadence, no speed-up
+    const MIN_MS = 550;
+    const MAX_MS = 1100;
 
-    // scoring rules
-    // +1 for correct odd tap
-    // -1 for every missed odd number (odd number that appears and you didn't tap before it changes)
-    // strike for tapping even; game ends at 3 strikes
-    // score can go negative
-    // highscores stored locally (per device) via localStorage
-
-    // ---------- DOM ----------
+    // ---------- DOM HELPERS ----------
     const $ = (id) => document.getElementById(id);
 
     const screenWelcome = $("screenWelcome");
@@ -310,18 +283,19 @@
     let strikes = 0;
     let missedOdds = 0;
 
-    // Track whether the CURRENT number was an odd that the player "claimed" by tapping.
-    // If an odd number changes while this is false => missed odd => -1 score.
+    // If the current number is odd and player tapped it => true; else false.
+    // When the number changes away from an odd and this is false => missed odd => -1.
     let currentOddTapped = false;
 
-    // Prevent double-taps from scoring multiple times per number.
+    // Prevent multiple scoring taps per shown number
     let hasTappedThisNumber = false;
 
     // ---------- UTIL ----------
-    function showToast(msg) {
+    function safeToast(msg) {
+      if (!toastEl) return;
       toastEl.textContent = msg;
       toastEl.classList.add("show");
-      setTimeout(() => toastEl.classList.remove("show"), 1600);
+      setTimeout(() => toastEl.classList.remove("show"), 1800);
     }
 
     function randInt(min, max) {
@@ -341,29 +315,32 @@
       missedEl.textContent = String(missedOdds);
     }
 
-    function isOdd(n) {
-      return (n % 2) === 1;
-    }
+    function isOdd(n) { return (n % 2) === 1; }
 
     // ---------- GAME LOOP ----------
+    function stopLoop() {
+      if (timer) clearTimeout(timer);
+      timer = null;
+    }
+
     function scheduleNextTick() {
       const delay = randInt(MIN_MS, MAX_MS);
       timer = setTimeout(tick, delay);
     }
 
     function tick() {
-      // If previous number was an odd and player did NOT tap it, that's a miss.
+      // Apply "missed odd" penalty for the previous number if it was odd and not tapped
       if (current !== null && isOdd(current) && !currentOddTapped) {
         score -= 1;
         missedOdds += 1;
         updateHUD();
       }
 
-      // New number
+      // Show next number
       current = randInt(MIN_NUM, MAX_NUM);
       numberEl.textContent = String(current);
 
-      // Reset per-number flags
+      // Reset flags for this number
       currentOddTapped = false;
       hasTappedThisNumber = false;
 
@@ -371,27 +348,25 @@
     }
 
     function startGame() {
-      // reset state
+      // Reset game state
       score = 0;
       strikes = 0;
       missedOdds = 0;
       current = null;
       currentOddTapped = false;
       hasTappedThisNumber = false;
-      updateHUD();
 
-      // screen + start loop
+      updateHUD();
       setScreen(screenGame);
 
-      if (timer) clearTimeout(timer);
-      tick(); // immediate first number
+      stopLoop();
+      tick(); // immediate first tick
     }
 
     function endGame() {
-      if (timer) clearTimeout(timer);
-      timer = null;
+      stopLoop();
 
-      // If game ends while an odd is on screen and wasn't tapped yet, count it as missed
+      // If ending while an odd is showing and not tapped, count as missed
       if (current !== null && isOdd(current) && !currentOddTapped) {
         score -= 1;
         missedOdds += 1;
@@ -404,49 +379,57 @@
     }
 
     // ---------- INPUT ----------
+    btnStart.addEventListener("click", () => {
+      try { startGame(); }
+      catch (e) { safeToast("Start failed: " + (e?.message || e)); }
+    });
+
     tapBtn.addEventListener("click", () => {
-      if (current === null) return;
+      try {
+        if (current === null) return;
 
-      // only score once per number
-      if (hasTappedThisNumber) return;
-      hasTappedThisNumber = true;
+        if (hasTappedThisNumber) return;
+        hasTappedThisNumber = true;
 
-      if (isOdd(current)) {
-        score += 1;
-        currentOddTapped = true;
-        updateHUD();
-      } else {
-        strikes += 1;
-        updateHUD();
-
-        if (strikes >= MAX_STRIKES) {
-          endGame();
+        if (isOdd(current)) {
+          score += 1;
+          currentOddTapped = true;
+          updateHUD();
         } else {
-          showToast(`Strike ${strikes}/${MAX_STRIKES}!`);
+          strikes += 1;
+          updateHUD();
+          if (strikes >= MAX_STRIKES) endGame();
+          else safeToast(`Strike ${strikes}/${MAX_STRIKES}!`);
         }
+      } catch (e) {
+        safeToast("Tap error: " + (e?.message || e));
       }
     });
 
     btnQuit.addEventListener("click", () => {
-      if (timer) clearTimeout(timer);
-      timer = null;
+      stopLoop();
       setScreen(screenWelcome);
     });
 
     // ---------- SHARE SCORE ----------
     function shareScore() {
       const url = location.href;
-      const text = `Odd-Only Arcade — I scored ${score}! Can you beat me? ${url}`;
+      const text = `Odd-Only Arcade — I scored ${score}! Beat that. ${url}`;
+
       if (navigator.share) {
         navigator.share({ title: "Odd-Only Arcade", text, url }).catch(() => {});
+        return;
+      }
+
+      // Clipboard sometimes fails on mobile / non-HTTPS / permissions => fallback to toast
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text)
+          .then(() => safeToast("Copied share text!"))
+          .catch(() => safeToast(text));
       } else {
-        navigator.clipboard?.writeText(text).then(
-          () => showToast("Copied share text!"),
-          () => showToast(text)
-        );
+        safeToast(text);
       }
     }
-
     btnShare.addEventListener("click", shareScore);
 
     // ---------- LEADERBOARD (LOCAL DEVICE) ----------
@@ -463,7 +446,8 @@
     }
 
     function saveLB(entries) {
-      localStorage.setItem(LB_KEY, JSON.stringify(entries));
+      try { localStorage.setItem(LB_KEY, JSON.stringify(entries)); }
+      catch {}
     }
 
     function addScore(initials, scoreValue) {
@@ -473,8 +457,6 @@
         score: Number(scoreValue) || 0,
         ts: Date.now()
       });
-
-      // sort: high to low, keep top 10
       entries.sort((a, b) => b.score - a.score);
       saveLB(entries.slice(0, 10));
     }
@@ -482,41 +464,35 @@
     function renderLeaderboard() {
       const entries = loadLB();
       if (!entries.length) {
-        leaderboardEl.innerHTML = `<h3>Top Scores (this device)</h3><div class="sub muted">No scores saved yet.</div>`;
+        leaderboardEl.innerHTML =
+          `<h3>Top Scores (this device)</h3><div class="sub muted">No scores saved yet.</div>`;
         return;
       }
-
       const rows = entries.map((e, i) => `
         <div class="lbRow">
           <span>#${i + 1} ${e.initials}</span>
           <span>${e.score}</span>
         </div>
       `).join("");
-
       leaderboardEl.innerHTML = `<h3>Top Scores (this device)</h3>${rows}`;
     }
 
     btnSave.addEventListener("click", () => {
       const initials = (initialsEl.value || "").trim().toUpperCase();
-      if (!initials) {
-        showToast("Enter initials first.");
-        return;
-      }
+      if (!initials) { safeToast("Enter initials first."); return; }
       addScore(initials, score);
-      showToast("Saved!");
+      safeToast("Saved!");
       renderLeaderboard();
     });
 
-    btnPlayAgain.addEventListener("click", () => {
-      startGame();
-    });
+    btnPlayAgain.addEventListener("click", () => startGame());
 
     // ---------- WELCOME IMAGE ERROR HANDLING ----------
     welcomeImg.addEventListener("error", () => {
       welcomeImgErr.classList.remove("hidden");
     });
 
-    // ---------- PWA SERVICE WORKER (GitHub Pages safe path) ----------
+    // ---------- PWA SERVICE WORKER ----------
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("./sw.js").catch(() => {});
