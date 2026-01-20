@@ -207,8 +207,16 @@
     display: flex;
     gap: 10px;
     margin-top: 10px;
+    flex-wrap: wrap;
   }
-  .btnrow button { font-size: 1rem; padding: 12px; }
+  .btnrow button { font-size: 1rem; padding: 12px; flex: 1; }
+
+  .toast {
+    margin-top: 10px;
+    font-size: 0.95rem;
+    opacity: 0.85;
+    min-height: 1.2em;
+  }
 </style>
 </head>
 
@@ -236,13 +244,13 @@
         <ul>
           <li>Tap an <b>odd</b> number: <b>+1</b> point.</li>
           <li><b>Miss</b> an odd number (it disappears before you tap it): <b>−1</b> point.</li>
-          <li>Score can go <b>negative</b>. No shame. Only data.</li>
+          <li>Score can go <b>negative</b>.</li>
         </ul>
 
         <h3 style="margin-top:12px;">High Scores</h3>
         <ul>
           <li>At game over, you can enter <b>3-letter initials</b> if you qualify.</li>
-          <li>Scores are saved on <b>this device</b> (perfect for passing the phone around).</li>
+          <li>Scores are saved on <b>this device</b> (passing-the-phone mode).</li>
         </ul>
       </div>
 
@@ -289,8 +297,11 @@
 
     <div class="btnrow">
       <button class="primary" id="saveBtn" style="display:none;">Save Score</button>
+      <button class="secondary" id="shareBtn">Share Score</button>
       <button class="secondary" id="backToWelcomeBtn">Back to Welcome</button>
     </div>
+
+    <div class="toast" id="toast"></div>
   </div>
 </div>
 
@@ -312,7 +323,7 @@
   /* ---------------------------
      LEADERBOARD
   ---------------------------- */
-  const LS_KEY = "odd_only_leaderboard_v3";
+  const LS_KEY = "odd_only_leaderboard_v4";
   const MAX_SCORES = 10;
 
   function loadBoard() {
@@ -370,9 +381,7 @@
   let timer = null;
   let running = false;
 
-  // For "missed odd" scoring:
-  // If an odd number appears and the player doesn't tap it before the next number,
-  // score decreases by 1.
+  // Missed-odd tracking
   let prevWasOdd = false;
   let tappedThisNumber = false;
 
@@ -384,11 +393,13 @@
   const scoreEl = document.getElementById("score");
   const strikesEl = document.getElementById("strikes");
   const finalScoreEl = document.getElementById("finalScore");
+  const toastEl = document.getElementById("toast");
 
   const startBtn = document.getElementById("startBtn");
   const tapBtn = document.getElementById("tapBtn");
   const quitBtn = document.getElementById("quitBtn");
   const backToWelcomeBtn = document.getElementById("backToWelcomeBtn");
+  const shareBtn = document.getElementById("shareBtn");
 
   const qualifyBlock = document.getElementById("qualifyBlock");
   const saveBtn = document.getElementById("saveBtn");
@@ -412,7 +423,7 @@
   }
 
   function spawnNextNumber() {
-    // Before changing the number, assess whether the previous odd was missed.
+    // If previous number was odd and player didn't tap it => -1
     if (prevWasOdd && !tappedThisNumber) {
       score -= 1;
     }
@@ -440,9 +451,10 @@
     strikes = 0;
     running = true;
 
-    // reset miss-tracking
     prevWasOdd = false;
     tappedThisNumber = false;
+
+    toastEl.textContent = "";
 
     welcome.style.display = "none";
     game.style.display = "block";
@@ -496,6 +508,7 @@
 
   function closeGameOver() {
     overlay.classList.remove("show");
+    toastEl.textContent = "";
   }
 
   function saveScore() {
@@ -511,6 +524,35 @@
 
     qualifyBlock.style.display = "none";
     saveBtn.style.display = "none";
+    toastEl.textContent = "Saved.";
+  }
+
+  async function shareScore() {
+    const url = window.location.href.split("?")[0];
+    const msg = `I scored ${score} on ODD-ONLY ARCADE. Beat that: ${url}`;
+
+    // Native share (best)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Odd-Only Arcade",
+          text: msg,
+          url: url
+        });
+        toastEl.textContent = "Shared!";
+        return;
+      } catch {
+        // User cancelled or share failed; fall through to clipboard
+      }
+    }
+
+    // Clipboard fallback
+    try {
+      await navigator.clipboard.writeText(msg);
+      toastEl.textContent = "Copied to clipboard. Paste into a text message.";
+    } catch {
+      toastEl.textContent = msg; // worst-case fallback: show text to manually copy
+    }
   }
 
   // Tap only if odd
@@ -518,19 +560,17 @@
     if (!running) return;
 
     if (current % 2 === 1) {
-      // successful odd tap
       score += 1;
       tappedThisNumber = true;
 
-      // optional: immediate advance makes it feel responsive
+      // Immediate advance keeps responsiveness
       spawnNextNumber();
       scheduleNext();
       return;
     }
 
-    // even tap => strike
     strikes += 1;
-    tappedThisNumber = true; // prevents "missed odd" penalty for this number
+    tappedThisNumber = true;
     updateHUD();
 
     numberEl.textContent = "X";
@@ -555,6 +595,7 @@
   });
 
   saveBtn.addEventListener("click", saveScore);
+  shareBtn.addEventListener("click", shareScore);
 
   backToWelcomeBtn.addEventListener("click", () => {
     closeGameOver();
