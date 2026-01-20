@@ -28,7 +28,7 @@
       padding: 20px;
     }
 
-    .active {
+    .screen.active {
       display: flex;
     }
 
@@ -43,7 +43,7 @@
     }
 
     button {
-      font-size: 1.5rem;
+      font-size: 1.4rem;
       padding: 14px 32px;
       border: none;
       border-radius: 12px;
@@ -60,9 +60,9 @@
 </head>
 <body>
 
-  <!-- WELCOME -->
+  <!-- WELCOME SCREEN -->
   <div id="welcome" class="screen active">
-    <img src="file_00000009e20718af64e90b1b2658e3f.png" alt="Odd-Only Arcade">
+    <img src="welcome.png" alt="Odd-Only Arcade">
     <h1>Odd-Only Arcade</h1>
     <div class="instructions">
       Tap ONLY when the number is odd.<br>
@@ -71,15 +71,15 @@
     <button id="startBtn">START</button>
   </div>
 
-  <!-- GAME -->
+  <!-- GAME SCREEN -->
   <div id="game" class="screen">
     <div id="number" class="number">1</div>
     <button id="tapBtn">Tap ONLY if odd</button>
   </div>
 
-  <!-- GAME OVER -->
+  <!-- GAME OVER SCREEN -->
   <div id="gameOver" class="screen">
-    <img src="file_00000009e20718af64e90b1b2658e3f.png" alt="Game Over">
+    <img src="welcome.png" alt="Game Over">
     <h2>Game Over</h2>
     <button id="restartBtn">Play Again</button>
   </div>
