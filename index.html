@@ -1,618 +1,161 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Odd-Only Arcade</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Odd-Only Arcade</title>
 
-<link rel="manifest" href="manifest.webmanifest" />
-<meta name="theme-color" content="#111111" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #000;
+      color: #0f0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
 
-<style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    background: #111;
-    color: #fff;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  }
+    .screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      z-index: 10;
+      text-align: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
 
-  .wrap {
-    width: min(620px, 92vw);
-    margin: 0 auto;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 16px;
-  }
+    .screen img {
+      max-width: min(92vw, 520px);
+      max-height: 70vh;
+      width: auto;
+      height: auto;
+      margin-bottom: 1rem;
+      border-radius: 18px;
+      box-shadow: 0 0 40px rgba(34, 197, 94, 0.25);
+    }
 
-  .card {
-    width: 100%;
-    border-radius: 18px;
-    padding: 16px;
-    background: rgba(255,255,255,0.07);
-    border: 1px solid rgba(255,255,255,0.14);
-    box-shadow: 0 20px 60px rgba(0,0,0,0.55);
-  }
+    .screen button {
+      font-size: 1.5rem;
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      border: none;
+      background: #22c55e;
+      color: #000;
+      cursor: pointer;
+      font-weight: 700;
+    }
 
-  .title {
-    font-weight: 1000;
-    letter-spacing: 0.08em;
-    margin: 8px 0 6px;
-    font-size: 1.6rem;
-  }
+    #game {
+      display: none;
+      height: 100%;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+    }
 
-  .subtitle {
-    opacity: 0.8;
-    margin: 0 0 12px;
-    font-size: 1rem;
-  }
+    #number {
+      font-size: clamp(4.5rem, 12vw, 7rem);
+      margin-bottom: 1rem;
+      color: #fff;
+    }
 
-  .img {
-    width: 100%;
-    max-width: 520px;
-    border-radius: 16px;
-    border: 1px solid rgba(255,255,255,0.12);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
-    margin: 10px auto 14px;
-    display: block;
-  }
+    #tap {
+      font-size: 2rem;
+      padding: 1rem 2.5rem;
+      border-radius: 14px;
+      border: none;
+      background: #22c55e;
+      color: #000;
+      font-weight: 800;
+    }
 
-  .instructions {
-    text-align: left;
-    padding: 12px;
-    border-radius: 14px;
-    background: rgba(0,0,0,0.20);
-    border: 1px solid rgba(255,255,255,0.10);
-    margin: 12px 0 14px;
-    line-height: 1.35;
-  }
-  .instructions h3 {
-    margin: 0 0 8px;
-    font-size: 0.95rem;
-    opacity: 0.9;
-    letter-spacing: 0.10em;
-    text-transform: uppercase;
-  }
-  .instructions ul {
-    margin: 0;
-    padding-left: 18px;
-    opacity: 0.92;
-  }
-  .instructions li { margin: 6px 0; }
-  .mono {
-    font-variant-numeric: tabular-nums;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  }
-
-  .hud {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    font-weight: 900;
-    opacity: 0.9;
-    margin-bottom: 10px;
-  }
-
-  .number {
-    font-size: 5.2rem;
-    line-height: 1;
-    margin: 14px 0 16px;
-    user-select: none;
-  }
-
-  button {
-    width: 100%;
-    font-size: 1.6rem;
-    padding: 1.05rem 1.25rem;
-    border-radius: 14px;
-    border: none;
-    font-weight: 1000;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  button.primary { background: #22c55e; color: #000; }
-  button.secondary {
-    margin-top: 10px;
-    background: rgba(255,255,255,0.10);
-    color: #fff;
-    border: 1px solid rgba(255,255,255,0.16);
-  }
-  button:active { transform: scale(0.99); }
-
-  .board {
-    margin-top: 14px;
-    padding: 12px;
-    border-radius: 14px;
-    background: rgba(0,0,0,0.20);
-    border: 1px solid rgba(255,255,255,0.10);
-    text-align: left;
-  }
-  .board h3 {
-    margin: 0 0 10px 0;
-    font-size: 0.95rem;
-    opacity: 0.9;
-    letter-spacing: 0.10em;
-    text-transform: uppercase;
-  }
-  .row {
-    display: grid;
-    grid-template-columns: 34px 1fr auto;
-    gap: 10px;
-    padding: 6px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    font-variant-numeric: tabular-nums;
-  }
-  .row:last-child { border-bottom: none; }
-  .rank { opacity: 0.7; }
-  .name { font-weight: 1000; letter-spacing: 0.10em; }
-  .pts { font-weight: 1000; }
-
-  /* Overlay */
-  .overlay {
-    position: fixed;
-    inset: 0;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    background: rgba(0,0,0,0.78);
-    backdrop-filter: blur(6px);
-    z-index: 10;
-  }
-  .overlay.show { display: flex; }
-
-  .modal {
-    width: min(560px, 92vw);
-    border-radius: 18px;
-    padding: 16px;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.14);
-    box-shadow: 0 20px 60px rgba(0,0,0,0.55);
-    text-align: center;
-  }
-  .modal h2 {
-    margin: 0 0 6px;
-    font-size: 1.5rem;
-    letter-spacing: 0.08em;
-  }
-  .modal p { margin: 6px 0 12px; opacity: 0.9; }
-
-  .initials {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin: 10px 0 10px;
-  }
-  .initials input {
-    width: 64px;
-    height: 64px;
-    border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.18);
-    background: rgba(0,0,0,0.25);
-    color: #fff;
-    font-size: 2rem;
-    font-weight: 1000;
-    text-align: center;
-    text-transform: uppercase;
-    outline: none;
-  }
-  .tiny { font-size: 0.85rem; opacity: 0.75; margin-top: 6px; }
-
-  .btnrow {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-    flex-wrap: wrap;
-  }
-  .btnrow button { font-size: 1rem; padding: 12px; flex: 1; }
-
-  .toast {
-    margin-top: 10px;
-    font-size: 0.95rem;
-    opacity: 0.85;
-    min-height: 1.2em;
-  }
-</style>
+    #score {
+      margin-top: 1rem;
+      font-size: 1.2rem;
+      color: #9aff9a;
+      opacity: 0.95;
+    }
+  </style>
 </head>
 
 <body>
-<div class="wrap">
-  <div class="card">
 
-    <!-- WELCOME SCREEN -->
-    <div id="welcome">
-      <div class="title">ODD-ONLY ARCADE</div>
-      <div class="subtitle">Fast fingers, no rhythm, no mercy.</div>
-
-      <img class="img" src="Screenshot_20260118-114905.png" alt="Welcome image" />
-
-      <div class="instructions">
-        <h3>How to Play</h3>
-        <ul>
-          <li>Numbers flash from <span class="mono">1–999</span> automatically.</li>
-          <li><b>Tap ONLY when the number is odd.</b> (1, 3, 5, 7, 9, …)</li>
-          <li>If you tap an <b>even</b> number, you gain a <b>strike</b>.</li>
-          <li><b>Three strikes</b> and the game ends.</li>
-        </ul>
-
-        <h3 style="margin-top:12px;">Scoring</h3>
-        <ul>
-          <li>Tap an <b>odd</b> number: <b>+1</b> point.</li>
-          <li><b>Miss</b> an odd number (it disappears before you tap it): <b>−1</b> point.</li>
-          <li>Score can go <b>negative</b>.</li>
-        </ul>
-
-        <h3 style="margin-top:12px;">High Scores</h3>
-        <ul>
-          <li>At game over, you can enter <b>3-letter initials</b> if you qualify.</li>
-          <li>Scores are saved on <b>this device</b> (passing-the-phone mode).</li>
-        </ul>
-      </div>
-
-      <button class="primary" id="startBtn">Start</button>
-
-      <div class="board">
-        <h3>High Scores (This Device)</h3>
-        <div id="leaderboard"></div>
-      </div>
-    </div>
-
-    <!-- GAME SCREEN -->
-    <div id="game" style="display:none;">
-      <div class="hud">
-        <div>Score: <span id="score">0</span></div>
-        <div>Strikes: <span id="strikes">0</span>/3</div>
-      </div>
-
-      <div class="number" id="number">—</div>
-      <button class="primary" id="tapBtn">Tap ONLY if odd</button>
-      <button class="secondary" id="quitBtn">Quit to Welcome</button>
-    </div>
-
+  <!-- WELCOME SCREEN -->
+  <div id="welcome" class="screen">
+    <img src="file_00000009e20718af64e90abcd.png" alt="Odd-Only Arcade">
+    <button onclick="startGame()">Start</button>
   </div>
-</div>
 
-<!-- GAME OVER OVERLAY -->
-<div class="overlay" id="overlay">
-  <div class="modal">
-    <h2>GAME OVER</h2>
-    <p>Your score: <span id="finalScore">0</span></p>
-
-    <img class="img" src="Screenshot_20260118-114905.png" alt="Game over image" />
-
-    <div id="qualifyBlock" style="display:none;">
-      <p style="margin-bottom:6px;">Enter initials</p>
-      <div class="initials">
-        <input id="i1" maxlength="1" inputmode="text" autocomplete="off" />
-        <input id="i2" maxlength="1" inputmode="text" autocomplete="off" />
-        <input id="i3" maxlength="1" inputmode="text" autocomplete="off" />
-      </div>
-      <div class="tiny">A–Z / 0–9. Saved on this phone.</div>
-    </div>
-
-    <div class="btnrow">
-      <button class="primary" id="saveBtn" style="display:none;">Save Score</button>
-      <button class="secondary" id="shareBtn">Share Score</button>
-      <button class="secondary" id="backToWelcomeBtn">Back to Welcome</button>
-    </div>
-
-    <div class="toast" id="toast"></div>
+  <!-- GAME -->
+  <div id="game">
+    <div id="number">–</div>
+    <button id="tap">Tap ONLY if odd</button>
+    <div id="score">Score: 0</div>
   </div>
-</div>
+
+  <!-- END SCREEN -->
+  <div id="end" class="screen" style="display:none;">
+    <img src="file_00000009e20718af64e90abcd.png" alt="Game Over">
+    <div style="margin-bottom:1rem;font-size:1.5rem;color:#fff;">
+      Final Score: <span id="finalScore"></span>
+    </div>
+    <button onclick="startGame()">Play Again</button>
+  </div>
 
 <script>
-  /* ---------------------------
-     CONFIG (constant speed)
-  ---------------------------- */
-  const MIN = 1;
-  const MAX = 999;
-
-  // Constant base speed (ms). Increase = slower.
-  const BASE_SPEED_MS = 850;
-
-  // Optional erratic timing around the base. Set to 0 for perfectly steady timing.
-  const JITTER_MS = 180;
-
-  const MAX_STRIKES = 3;
-
-  /* ---------------------------
-     LEADERBOARD
-  ---------------------------- */
-  const LS_KEY = "odd_only_leaderboard_v4";
-  const MAX_SCORES = 10;
-
-  function loadBoard() {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      const arr = raw ? JSON.parse(raw) : [];
-      if (!Array.isArray(arr)) return [];
-      return arr
-        .filter(e => e && typeof e.name === "string" && typeof e.score === "number")
-        .map(e => ({
-          name: e.name.slice(0,3).toUpperCase(),
-          score: Number.isFinite(e.score) ? Math.trunc(e.score) : 0
-        }))
-        .sort((a,b) => b.score - a.score)
-        .slice(0, MAX_SCORES);
-    } catch {
-      return [];
-    }
-  }
-
-  function saveBoard(board) {
-    localStorage.setItem(LS_KEY, JSON.stringify(board.slice(0, MAX_SCORES)));
-  }
-
-  function qualifies(finalScore, board) {
-    // Allow negative scores in game, but only save scores > 0
-    if (finalScore <= 0) return false;
-    if (board.length < MAX_SCORES) return true;
-    const last = board[board.length - 1]?.score ?? 0;
-    return finalScore > last;
-  }
-
-  function renderBoard() {
-    const board = loadBoard();
-    const el = document.getElementById("leaderboard");
-    if (board.length === 0) {
-      el.innerHTML = '<div style="opacity:.75;">No scores yet. Be the first.</div>';
-      return;
-    }
-    el.innerHTML = board.map((e, idx) => `
-      <div class="row">
-        <div class="rank">${String(idx+1).padStart(2,"0")}</div>
-        <div class="name">${e.name}</div>
-        <div class="pts">${e.score}</div>
-      </div>
-    `).join("");
-  }
-
-  /* ---------------------------
-     GAME STATE
-  ---------------------------- */
   let current = 0;
-  let score = 0;      // can go negative
-  let strikes = 0;
-  let timer = null;
-  let running = false;
-
-  // Missed-odd tracking
-  let prevWasOdd = false;
-  let tappedThisNumber = false;
-
-  const welcome = document.getElementById("welcome");
-  const game = document.getElementById("game");
-  const overlay = document.getElementById("overlay");
+  let score = 0;
+  let interval = null;
 
   const numberEl = document.getElementById("number");
   const scoreEl = document.getElementById("score");
-  const strikesEl = document.getElementById("strikes");
-  const finalScoreEl = document.getElementById("finalScore");
-  const toastEl = document.getElementById("toast");
+  const tapBtn = document.getElementById("tap");
 
-  const startBtn = document.getElementById("startBtn");
-  const tapBtn = document.getElementById("tapBtn");
-  const quitBtn = document.getElementById("quitBtn");
-  const backToWelcomeBtn = document.getElementById("backToWelcomeBtn");
-  const shareBtn = document.getElementById("shareBtn");
-
-  const qualifyBlock = document.getElementById("qualifyBlock");
-  const saveBtn = document.getElementById("saveBtn");
-
-  const i1 = document.getElementById("i1");
-  const i2 = document.getElementById("i2");
-  const i3 = document.getElementById("i3");
-
-  function randInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+  function randomNumber() {
+    return Math.floor(Math.random() * 999) + 1; // 1–999
   }
 
-  function updateHUD() {
-    scoreEl.textContent = String(score);
-    strikesEl.textContent = String(strikes);
+  function showNext() {
+    current = randomNumber();
+    numberEl.textContent = current;
   }
 
-  function nextDelay() {
-    if (JITTER_MS <= 0) return BASE_SPEED_MS;
-    return Math.max(120, BASE_SPEED_MS + randInt(-JITTER_MS, JITTER_MS));
-  }
-
-  function spawnNextNumber() {
-    // If previous number was odd and player didn't tap it => -1
-    if (prevWasOdd && !tappedThisNumber) {
-      score -= 1;
+  tapBtn.addEventListener("click", () => {
+    if (current % 2 === 1) {
+      score++;
+      scoreEl.textContent = `Score: ${score}`;
+      showNext();
+    } else {
+      endGame();
     }
-
-    current = randInt(MIN, MAX);
-    numberEl.textContent = String(current);
-
-    prevWasOdd = (current % 2 === 1);
-    tappedThisNumber = false;
-
-    updateHUD();
-  }
-
-  function scheduleNext() {
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      if (!running) return;
-      spawnNextNumber();
-      scheduleNext();
-    }, nextDelay());
-  }
+  });
 
   function startGame() {
+    document.getElementById("welcome").style.display = "none";
+    document.getElementById("end").style.display = "none";
+    document.getElementById("game").style.display = "flex";
+
     score = 0;
-    strikes = 0;
-    running = true;
+    scoreEl.textContent = "Score: 0";
+    showNext();
 
-    prevWasOdd = false;
-    tappedThisNumber = false;
-
-    toastEl.textContent = "";
-
-    welcome.style.display = "none";
-    game.style.display = "block";
-
-    updateHUD();
-    spawnNextNumber();
-    scheduleNext();
+    clearInterval(interval);
+    interval = setInterval(showNext, 1200); // steady speed (no speed-up)
   }
 
-  function stopGame() {
-    running = false;
-    clearTimeout(timer);
-    timer = null;
-  }
-
-  function sanitizeChar(ch) {
-    const up = (ch || "").toUpperCase();
-    return /^[A-Z0-9]$/.test(up) ? up : "";
-  }
-
-  function focusFlow(input, next) {
-    input.addEventListener("input", () => {
-      input.value = sanitizeChar(input.value);
-      if (input.value && next) next.focus();
-    });
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Backspace" && !input.value) {
-        if (input === i3) i2.focus();
-        if (input === i2) i1.focus();
-      }
-    });
-  }
-  focusFlow(i1, i2);
-  focusFlow(i2, i3);
-  focusFlow(i3, null);
-
-  function openGameOver() {
-    stopGame();
-    finalScoreEl.textContent = String(score);
-
-    const board = loadBoard();
-    const canSave = qualifies(score, board);
-
-    qualifyBlock.style.display = canSave ? "block" : "none";
-    saveBtn.style.display = canSave ? "block" : "none";
-
-    i1.value = ""; i2.value = ""; i3.value = "";
-    overlay.classList.add("show");
-    if (canSave) setTimeout(() => i1.focus(), 50);
-  }
-
-  function closeGameOver() {
-    overlay.classList.remove("show");
-    toastEl.textContent = "";
-  }
-
-  function saveScore() {
-    const name = (sanitizeChar(i1.value) || "A") +
-                 (sanitizeChar(i2.value) || "A") +
-                 (sanitizeChar(i3.value) || "A");
-
-    const board = loadBoard();
-    board.push({ name, score });
-    board.sort((a,b) => b.score - a.score);
-    saveBoard(board);
-    renderBoard();
-
-    qualifyBlock.style.display = "none";
-    saveBtn.style.display = "none";
-    toastEl.textContent = "Saved.";
-  }
-
-  async function shareScore() {
-    const url = window.location.href.split("?")[0];
-    const msg = `I scored ${score} on ODD-ONLY ARCADE. Beat that: ${url}`;
-
-    // Native share (best)
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "Odd-Only Arcade",
-          text: msg,
-          url: url
-        });
-        toastEl.textContent = "Shared!";
-        return;
-      } catch {
-        // User cancelled or share failed; fall through to clipboard
-      }
-    }
-
-    // Clipboard fallback
-    try {
-      await navigator.clipboard.writeText(msg);
-      toastEl.textContent = "Copied to clipboard. Paste into a text message.";
-    } catch {
-      toastEl.textContent = msg; // worst-case fallback: show text to manually copy
-    }
-  }
-
-  // Tap only if odd
-  tapBtn.addEventListener("click", () => {
-    if (!running) return;
-
-    if (current % 2 === 1) {
-      score += 1;
-      tappedThisNumber = true;
-
-      // Immediate advance keeps responsiveness
-      spawnNextNumber();
-      scheduleNext();
-      return;
-    }
-
-    strikes += 1;
-    tappedThisNumber = true;
-    updateHUD();
-
-    numberEl.textContent = "X";
-    setTimeout(() => {
-      if (!running) return;
-      spawnNextNumber();
-      scheduleNext();
-    }, 200);
-
-    if (strikes >= MAX_STRIKES) {
-      setTimeout(openGameOver, 260);
-    }
-  });
-
-  startBtn.addEventListener("click", startGame);
-
-  quitBtn.addEventListener("click", () => {
-    stopGame();
-    game.style.display = "none";
-    welcome.style.display = "block";
-    renderBoard();
-  });
-
-  saveBtn.addEventListener("click", saveScore);
-  shareBtn.addEventListener("click", shareScore);
-
-  backToWelcomeBtn.addEventListener("click", () => {
-    closeGameOver();
-    game.style.display = "none";
-    welcome.style.display = "block";
-    renderBoard();
-  });
-
-  // Init
-  renderBoard();
-
-  // PWA service worker
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/odd-only/sw.js").catch(() => {});
-    });
+  function endGame() {
+    clearInterval(interval);
+    document.getElementById("game").style.display = "none";
+    document.getElementById("finalScore").textContent = score;
+    document.getElementById("end").style.display = "flex";
   }
 </script>
+
 </body>
 </html>
