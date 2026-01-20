@@ -1,285 +1,530 @@
-<script>
-  // ===== Elements =====
-  const welcome = document.getElementById("welcome");
-  const game = document.getElementById("game");
-  const end = document.getElementById("end");
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Odd-Only Arcade</title>
 
-  const startBtn = document.getElementById("startBtn");
-  const againBtn = document.getElementById("againBtn");
-  const tapBtn = document.getElementById("tapBtn");
-  const quitBtn = document.getElementById("quitBtn");
-  const backBtn = document.getElementById("backBtn");
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#111111" />
 
-  const scoreEl = document.getElementById("score");
-  const numberEl = document.getElementById("number");
-  const finalScoreEl = document.getElementById("finalScore");
-
-  const shareBtn = document.getElementById("shareBtn");
-  const toastEl = document.getElementById("toast");
-
-  const boardEl = document.getElementById("leaderboard");
-  const boardEndEl = document.getElementById("leaderboardEnd");
-
-  const initialsWrap = document.getElementById("initialsWrap");
-  const saveBtn = document.getElementById("saveBtn");
-  const i1 = document.getElementById("i1");
-  const i2 = document.getElementById("i2");
-  const i3 = document.getElementById("i3");
-
-  // ===== Leaderboard storage =====
-  const LS_KEY = "oddOnlyHighScores_v1";
-  const MAX_SCORES = 10;
-
-  function loadScores() {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      const arr = raw ? JSON.parse(raw) : [];
-      if (!Array.isArray(arr)) return [];
-      return arr
-        .filter(x => x && typeof x.name === "string" && typeof x.score === "number")
-        .map(x => ({ name: x.name.slice(0,3).toUpperCase(), score: Math.trunc(x.score) }))
-        .sort((a,b) => b.score - a.score)
-        .slice(0, MAX_SCORES);
-    } catch {
-      return [];
-    }
-  }
-
-  function saveScores(arr) {
-    localStorage.setItem(LS_KEY, JSON.stringify(arr.slice(0, MAX_SCORES)));
-  }
-
-  function qualifies(score, scores) {
-    if (score <= 0) return false;
-    if (scores.length < MAX_SCORES) return true;
-    return score > (scores[scores.length - 1]?.score ?? 0);
-  }
-
-  function renderScores() {
-    const scores = loadScores();
-    const html = scores.length
-      ? scores.map((s, idx) => `
-          <div class="row">
-            <div class="rank">${String(idx+1).padStart(2,"0")}</div>
-            <div class="name">${s.name}</div>
-            <div class="pts">${s.score}</div>
-          </div>
-        `).join("")
-      : `<div style="opacity:.75;">No scores yet. Be the first.</div>`;
-
-    boardEl.innerHTML = html;
-    boardEndEl.innerHTML = html;
-  }
-
-  // ===== Game state =====
-  let score = 0;
-  let strikes = 0;
-  const MAX_STRIKES = 3;
-
-  let current = 7;
-  let running = false;
-  let timer = null;
-
-  // Missed-odd tracking
-  let lastWasOdd = false;
-  let tappedDuringThisNumber = false;
-
-  // Timing: constant average + erratic cadence (no ramping)
-  const BASE_MS = 950;
-  const VAR_MS  = 260;
-
-  function randInt(a, b) {
-    return Math.floor(a + Math.random() * (b - a + 1));
-  }
-
-  function nextDelay() {
-    return Math.max(300, BASE_MS + randInt(-VAR_MS, VAR_MS));
-  }
-
-  function show(screen) {
-    welcome.classList.remove("active");
-    game.classList.remove("active");
-    end.classList.remove("active");
-    screen.classList.add("active");
-  }
-
-  function setToast(msg) {
-    toastEl.textContent = msg || "";
-  }
-
-  function updateHUD() {
-    scoreEl.textContent = `Score: ${score} | Strikes: ${strikes}/${MAX_STRIKES}`;
-  }
-
-  function addStrike(reason) {
-    strikes += 1;
-    updateHUD();
-
-    if (strikes >= MAX_STRIKES) {
-      endGame();
-    }
-  }
-
-  function newNumber() {
-    // If the previous number was odd and player didn't tap it before it changed:
-    if (lastWasOdd && !tappedDuringThisNumber) {
-      score -= 1;         // scoring rule
-      addStrike("missed_odd"); // strike rule
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: #0b0b0b;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
     }
 
-    current = randInt(1, 999);
-    numberEl.textContent = String(current);
-
-    lastWasOdd = (current % 2 === 1);
-    tappedDuringThisNumber = false;
-
-    updateHUD();
-  }
-
-  function tick() {
-    if (!running) return;
-    newNumber();
-    timer = setTimeout(tick, nextDelay());
-  }
-
-  function startGame() {
-    clearTimeout(timer);
-    timer = null;
-
-    score = 0;
-    strikes = 0;
-    running = true;
-
-    lastWasOdd = false;
-    tappedDuringThisNumber = false;
-
-    setToast("");
-
-    initialsWrap.style.display = "none";
-    i1.value = ""; i2.value = ""; i3.value = "";
-
-    show(game);
-    newNumber();
-    tick();
-  }
-
-  function endGame() {
-    running = false;
-    clearTimeout(timer);
-    timer = null;
-
-    finalScoreEl.textContent = `Final Score: ${score} (Strikes: ${strikes}/${MAX_STRIKES})`;
-
-    const scores = loadScores();
-    if (qualifies(score, scores)) {
-      initialsWrap.style.display = "flex";
-      setTimeout(() => i1.focus(), 50);
-    } else {
-      initialsWrap.style.display = "none";
+    .app {
+      width: min(520px, 100%);
+      text-align: center;
     }
 
-    renderScores();
-    show(end);
-  }
+    .card {
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 14px 40px rgba(0,0,0,.55);
+      backdrop-filter: blur(6px);
+    }
 
-  // ===== Tap logic =====
-  // Correct odd tap: +1, no strike
-  // Even tap: -1 + strike (but game continues until 3 strikes)
-  tapBtn.addEventListener("click", () => {
-    if (!running) return;
+    .hidden { display: none !important; }
 
-    tappedDuringThisNumber = true;
+    .title {
+      font-weight: 900;
+      letter-spacing: .6px;
+      margin: 10px 0 8px;
+      font-size: 22px;
+      text-transform: uppercase;
+    }
 
-    if (current % 2 === 1) {
-      score += 1;
+    .sub {
+      opacity: .9;
+      line-height: 1.35;
+      margin: 8px 0 14px;
+      font-size: 15px;
+    }
+
+    .hero {
+      width: 100%;
+      border-radius: 14px;
+      display: block;
+      margin: 0 auto 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: #111;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .value {
+      font-variant-numeric: tabular-nums;
+      font-weight: 900;
+      font-size: 16px;
+    }
+
+    .number {
+      font-size: 84px;
+      font-weight: 900;
+      line-height: 1;
+      margin: 18px 0 14px;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 8px 30px rgba(0,0,0,.55);
+    }
+
+    button {
+      appearance: none;
+      border: none;
+      border-radius: 14px;
+      padding: 16px 18px;
+      font-size: 26px;
+      font-weight: 900;
+      cursor: pointer;
+      background: #59c36a;
+      color: #0b0b0b;
+      box-shadow: 0 10px 24px rgba(0,0,0,.45);
+      min-width: 240px;
+    }
+    button:active { transform: translateY(1px); }
+    button.secondary {
+      background: rgba(255,255,255,.12);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.16);
+      min-width: auto;
+      font-size: 16px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      box-shadow: none;
+    }
+
+    .danger { color: #ff6262; font-weight: 800; }
+    .muted { opacity: .85; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,.82);
+      border: 1px solid rgba(255,255,255,.16);
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease;
+      max-width: min(92vw, 520px);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .toast.show { opacity: 1; }
+
+    .endScore {
+      font-size: 34px;
+      font-weight: 900;
+      margin: 10px 0 8px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .leaderboard {
+      margin-top: 12px;
+      text-align: left;
+      font-size: 14px;
+      opacity: .95;
+    }
+    .leaderboard h3 {
+      margin: 10px 0 6px;
+      font-size: 14px;
+      letter-spacing: .4px;
+      text-transform: uppercase;
+      opacity: .85;
+    }
+    .lbRow {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 8px;
+      border-radius: 10px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      margin-bottom: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+    .lbRow span:first-child { font-weight: 900; }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- WELCOME -->
+    <section id="screenWelcome" class="card">
+      <img id="welcomeImg" class="hero" src="welcome.png" alt="Odd-Only Arcade" />
+      <div class="title">Odd-Only Arcade</div>
+      <div class="sub">
+        Tap the button <b>ONLY</b> when the number is <b>odd</b>.<br/>
+        If you miss an odd number, you lose <b>1 point</b>.<br/>
+        Tap on an even number and you get a <b>strike</b>.<br/>
+        <b>3 strikes</b> and the game ends.
+      </div>
+      <div class="row">
+        <button id="btnStart">START</button>
+      </div>
+      <div id="welcomeImgErr" class="sub danger hidden" style="margin-top:10px;">
+        ❌ Welcome image failed to load. Make sure the file is named <b>welcome.png</b> in the repo root.
+      </div>
+    </section>
+
+    <!-- GAME -->
+    <section id="screenGame" class="card hidden">
+      <div class="row" style="margin-top:0;">
+        <div class="pill">Score: <span id="score" class="value">0</span></div>
+        <div class="pill">Strikes: <span id="strikes" class="value">0</span>/3</div>
+        <div class="pill">Odds missed: <span id="missed" class="value">0</span></div>
+      </div>
+
+      <div id="number" class="number">—</div>
+
+      <div class="row">
+        <button id="tap">Tap ONLY if odd</button>
+      </div>
+
+      <div class="row">
+        <button id="btnShare" class="secondary">Share score</button>
+        <button id="btnQuit" class="secondary">Quit</button>
+      </div>
+
+      <div class="sub muted" style="margin-top:10px;">
+        Numbers are 1–999, changing at an erratic cadence (but not speeding up).
+      </div>
+    </section>
+
+    <!-- END -->
+    <section id="screenEnd" class="card hidden">
+      <img class="hero" src="welcome.png" alt="Odd-Only Arcade" />
+      <div class="title">Game Over</div>
+      <div class="endScore">Score: <span id="finalScore">0</span></div>
+
+      <div class="sub">
+        Enter initials (1–3 letters) to save your score:
+      </div>
+
+      <div class="row" style="margin-bottom:10px;">
+        <input id="initials" maxlength="3" inputmode="text" autocomplete="off"
+               style="width:120px;text-transform:uppercase;text-align:center;
+                      font-size:22px;font-weight:900;border-radius:12px;
+                      padding:10px;border:1px solid rgba(255,255,255,.2);
+                      background:rgba(255,255,255,.08);color:#fff;" />
+        <button id="btnSave" class="secondary">Save</button>
+      </div>
+
+      <div class="row">
+        <button id="btnPlayAgain">Play again</button>
+      </div>
+
+      <div class="leaderboard" id="leaderboard"></div>
+    </section>
+
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    // ---------- SETTINGS ----------
+    const MAX_STRIKES = 3;
+    const MIN_NUM = 1;
+    const MAX_NUM = 999;
+
+    // cadence: erratic but not speeding up
+    const MIN_MS = 450;   // slower
+    const MAX_MS = 950;   // erratic
+
+    // scoring rules
+    // +1 for correct odd tap
+    // -1 for every missed odd number (odd number that appears and you didn't tap before it changes)
+    // strike for tapping even; game ends at 3 strikes
+    // score can go negative
+    // highscores stored locally (per device) via localStorage
+
+    // ---------- DOM ----------
+    const $ = (id) => document.getElementById(id);
+
+    const screenWelcome = $("screenWelcome");
+    const screenGame    = $("screenGame");
+    const screenEnd     = $("screenEnd");
+
+    const welcomeImg    = $("welcomeImg");
+    const welcomeImgErr = $("welcomeImgErr");
+
+    const btnStart      = $("btnStart");
+    const btnQuit       = $("btnQuit");
+    const btnShare      = $("btnShare");
+
+    const numberEl      = $("number");
+    const tapBtn        = $("tap");
+
+    const scoreEl       = $("score");
+    const strikesEl     = $("strikes");
+    const missedEl      = $("missed");
+
+    const finalScoreEl  = $("finalScore");
+    const initialsEl    = $("initials");
+    const btnSave       = $("btnSave");
+    const btnPlayAgain  = $("btnPlayAgain");
+    const leaderboardEl = $("leaderboard");
+
+    const toastEl       = $("toast");
+
+    // ---------- STATE ----------
+    let timer = null;
+    let current = null;
+
+    let score = 0;
+    let strikes = 0;
+    let missedOdds = 0;
+
+    // Track whether the CURRENT number was an odd that the player "claimed" by tapping.
+    // If an odd number changes while this is false => missed odd => -1 score.
+    let currentOddTapped = false;
+
+    // Prevent double-taps from scoring multiple times per number.
+    let hasTappedThisNumber = false;
+
+    // ---------- UTIL ----------
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add("show");
+      setTimeout(() => toastEl.classList.remove("show"), 1600);
+    }
+
+    function randInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function setScreen(which) {
+      screenWelcome.classList.add("hidden");
+      screenGame.classList.add("hidden");
+      screenEnd.classList.add("hidden");
+      which.classList.remove("hidden");
+    }
+
+    function updateHUD() {
+      scoreEl.textContent = String(score);
+      strikesEl.textContent = String(strikes);
+      missedEl.textContent = String(missedOdds);
+    }
+
+    function isOdd(n) {
+      return (n % 2) === 1;
+    }
+
+    // ---------- GAME LOOP ----------
+    function scheduleNextTick() {
+      const delay = randInt(MIN_MS, MAX_MS);
+      timer = setTimeout(tick, delay);
+    }
+
+    function tick() {
+      // If previous number was an odd and player did NOT tap it, that's a miss.
+      if (current !== null && isOdd(current) && !currentOddTapped) {
+        score -= 1;
+        missedOdds += 1;
+        updateHUD();
+      }
+
+      // New number
+      current = randInt(MIN_NUM, MAX_NUM);
+      numberEl.textContent = String(current);
+
+      // Reset per-number flags
+      currentOddTapped = false;
+      hasTappedThisNumber = false;
+
+      scheduleNextTick();
+    }
+
+    function startGame() {
+      // reset state
+      score = 0;
+      strikes = 0;
+      missedOdds = 0;
+      current = null;
+      currentOddTapped = false;
+      hasTappedThisNumber = false;
       updateHUD();
-      // optional: immediately roll a new number after a correct tap
-      newNumber();
-    } else {
-      score -= 1;
-      updateHUD();
-      addStrike("tapped_even");
-      // also roll a new number so it doesn't feel stuck
-      if (running) newNumber();
+
+      // screen + start loop
+      setScreen(screenGame);
+
+      if (timer) clearTimeout(timer);
+      tick(); // immediate first number
     }
-  });
 
-  // ===== Initials + save =====
-  function cleanChar(ch) {
-    const up = (ch || "").toUpperCase();
-    return /^[A-Z0-9]$/.test(up) ? up : "";
-  }
+    function endGame() {
+      if (timer) clearTimeout(timer);
+      timer = null;
 
-  function wireInput(inp, next) {
-    inp.addEventListener("input", () => {
-      inp.value = cleanChar(inp.value);
-      if (inp.value && next) next.focus();
-    });
-    inp.addEventListener("keydown", (e) => {
-      if (e.key === "Backspace" && !inp.value) {
-        if (inp === i3) i2.focus();
-        if (inp === i2) i1.focus();
+      // If game ends while an odd is on screen and wasn't tapped yet, count it as missed
+      if (current !== null && isOdd(current) && !currentOddTapped) {
+        score -= 1;
+        missedOdds += 1;
+      }
+
+      finalScoreEl.textContent = String(score);
+      initialsEl.value = "";
+      renderLeaderboard();
+      setScreen(screenEnd);
+    }
+
+    // ---------- INPUT ----------
+    tapBtn.addEventListener("click", () => {
+      if (current === null) return;
+
+      // only score once per number
+      if (hasTappedThisNumber) return;
+      hasTappedThisNumber = true;
+
+      if (isOdd(current)) {
+        score += 1;
+        currentOddTapped = true;
+        updateHUD();
+      } else {
+        strikes += 1;
+        updateHUD();
+
+        if (strikes >= MAX_STRIKES) {
+          endGame();
+        } else {
+          showToast(`Strike ${strikes}/${MAX_STRIKES}!`);
+        }
       }
     });
-  }
-  wireInput(i1, i2);
-  wireInput(i2, i3);
-  wireInput(i3, null);
 
-  saveBtn.addEventListener("click", () => {
-    const name =
-      (cleanChar(i1.value) || "A") +
-      (cleanChar(i2.value) || "A") +
-      (cleanChar(i3.value) || "A");
+    btnQuit.addEventListener("click", () => {
+      if (timer) clearTimeout(timer);
+      timer = null;
+      setScreen(screenWelcome);
+    });
 
-    const scores = loadScores();
-    scores.push({ name, score });
-    scores.sort((a,b) => b.score - a.score);
-    saveScores(scores);
-
-    initialsWrap.style.display = "none";
-    setToast("Saved.");
-    renderScores();
-  });
-
-  // ===== Share score =====
-  shareBtn.addEventListener("click", async () => {
-    const url = window.location.href.split("?")[0];
-    const text = `I scored ${score} on Odd-Only Arcade (3 strikes mode). Beat that: ${url}`;
-
-    try {
+    // ---------- SHARE SCORE ----------
+    function shareScore() {
+      const url = location.href;
+      const text = `Odd-Only Arcade — I scored ${score}! Can you beat me? ${url}`;
       if (navigator.share) {
-        await navigator.share({ title: "Odd-Only Arcade", text, url });
-        setToast("Shared!");
+        navigator.share({ title: "Odd-Only Arcade", text, url }).catch(() => {});
+      } else {
+        navigator.clipboard?.writeText(text).then(
+          () => showToast("Copied share text!"),
+          () => showToast(text)
+        );
+      }
+    }
+
+    btnShare.addEventListener("click", shareScore);
+
+    // ---------- LEADERBOARD (LOCAL DEVICE) ----------
+    const LB_KEY = "oddOnlyArcade_leaderboard_v1";
+
+    function loadLB() {
+      try {
+        const raw = localStorage.getItem(LB_KEY);
+        const data = raw ? JSON.parse(raw) : [];
+        return Array.isArray(data) ? data : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveLB(entries) {
+      localStorage.setItem(LB_KEY, JSON.stringify(entries));
+    }
+
+    function addScore(initials, scoreValue) {
+      const entries = loadLB();
+      entries.push({
+        initials: (initials || "???").toUpperCase().slice(0, 3),
+        score: Number(scoreValue) || 0,
+        ts: Date.now()
+      });
+
+      // sort: high to low, keep top 10
+      entries.sort((a, b) => b.score - a.score);
+      saveLB(entries.slice(0, 10));
+    }
+
+    function renderLeaderboard() {
+      const entries = loadLB();
+      if (!entries.length) {
+        leaderboardEl.innerHTML = `<h3>Top Scores (this device)</h3><div class="sub muted">No scores saved yet.</div>`;
         return;
       }
-    } catch { /* ignore */ }
 
-    try {
-      await navigator.clipboard.writeText(text);
-      setToast("Copied to clipboard — paste into a text.");
-    } catch {
-      setToast(text);
+      const rows = entries.map((e, i) => `
+        <div class="lbRow">
+          <span>#${i + 1} ${e.initials}</span>
+          <span>${e.score}</span>
+        </div>
+      `).join("");
+
+      leaderboardEl.innerHTML = `<h3>Top Scores (this device)</h3>${rows}`;
     }
-  });
 
-  // ===== Navigation =====
-  startBtn.addEventListener("click", startGame);
-  againBtn.addEventListener("click", startGame);
+    btnSave.addEventListener("click", () => {
+      const initials = (initialsEl.value || "").trim().toUpperCase();
+      if (!initials) {
+        showToast("Enter initials first.");
+        return;
+      }
+      addScore(initials, score);
+      showToast("Saved!");
+      renderLeaderboard();
+    });
 
-  quitBtn.addEventListener("click", () => {
-    running = false;
-    clearTimeout(timer);
-    timer = null;
-    renderScores();
-    show(welcome);
-  });
+    btnPlayAgain.addEventListener("click", () => {
+      startGame();
+    });
 
-  backBtn.addEventListener("click", () => {
-    renderScores();
-    show(welcome);
-  });
+    // ---------- WELCOME IMAGE ERROR HANDLING ----------
+    welcomeImg.addEventListener("error", () => {
+      welcomeImgErr.classList.remove("hidden");
+    });
 
-  // Init
-  renderScores();
-</script>
+    // ---------- PWA SERVICE WORKER (GitHub Pages safe path) ----------
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch(() => {});
+      });
+    }
+
+    // Start on welcome
+    setScreen(screenWelcome);
+  </script>
+</body>
+</html>
