@@ -1,1 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Odd-Only Reaction Game</title>
 
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#111111" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #111;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+    button {
+      font-size: 2rem;
+      padding: 1.5rem 2.5rem;
+      border-radius: 12px;
+      border: none;
+      background: #22c55e;
+      color: #000;
+      margin-top: 1rem;
+    }
+    .number {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div>
+    <div class="number" id="number">—</div>
+    <button id="tap">Tap ONLY if odd</button>
+  </div>
+
+  <script>
+    let current = 0;
+
+    function nextNumber() {
+      current = Math.floor(Math.random() * 9) + 1;
+      document.getElementById("number").textContent = current;
+    }
+
+    document.getElementById("tap").addEventListener("click", () => {
+      if (current % 2 === 1) {
+        nextNumber();
+      } else {
+        alert("❌ Even number! Game over.");
+        current = 0;
+        document.getElementById("number").textContent = "—";
+      }
+    });
+
+    nextNumber();
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js");
+    }
+  </script>
+
+</body>
+</html>
