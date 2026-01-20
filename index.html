@@ -1,453 +1,225 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Odd-Only Arcade</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Odd-Only Reaction Game</title>
 
-  <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#111111" />
+<link rel="manifest" href="manifest.webmanifest" />
+<meta name="theme-color" content="#111111" />
 
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      background: #111;
-      color: #fff;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    }
+<style>
+  body {
+    margin: 0;
+    background: #111;
+    color: #fff;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    text-align: center;
+  }
 
-    body {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-    }
+  .game {
+    width: 100%;
+    max-width: 420px;
+    padding: 20px;
+  }
 
-    .wrap { width: min(560px, 92vw); }
+  .hud {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 1.2rem;
+  }
 
-    .hud {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      font-weight: 900;
-      opacity: 0.9;
-      margin-bottom: 14px;
-      font-size: 1.05rem;
-    }
+  .number {
+    font-size: 6rem;
+    margin: 20px 0;
+  }
 
-    .number {
-      font-size: 5.2rem;
-      line-height: 1;
-      margin: 18px 0 20px;
-      user-select: none;
-    }
+  button {
+    font-size: 1.8rem;
+    padding: 1.2rem 2rem;
+    border-radius: 14px;
+    border: none;
+    background: #58d26a;
+    color: #000;
+    font-weight: bold;
+    width: 100%;
+  }
 
-    button.primary {
-      width: 100%;
-      font-size: 2rem;
-      padding: 1.2rem 1.6rem;
-      border-radius: 14px;
-      border: none;
-      background: #22c55e;
-      color: #000;
-      font-weight: 1000;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-    button.primary:active { transform: scale(0.99); }
+  #overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.88);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
 
-    .hint {
-      margin-top: 12px;
-      opacity: 0.7;
-      font-size: 0.95rem;
-    }
+  #overlay.show {
+    display: flex;
+  }
 
-    .board {
-      margin-top: 18px;
-      padding: 14px;
-      border-radius: 14px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.12);
-      text-align: left;
-    }
-    .board h3 {
-      margin: 0 0 10px 0;
-      font-size: 1rem;
-      opacity: 0.9;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    .row {
-      display: grid;
-      grid-template-columns: 36px 1fr auto;
-      gap: 10px;
-      padding: 6px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      font-variant-numeric: tabular-nums;
-    }
-    .row:last-child { border-bottom: none; }
-    .rank { opacity: 0.7; }
-    .name { font-weight: 900; letter-spacing: 0.08em; }
-    .pts { font-weight: 900; }
+  .modal {
+    text-align: center;
+    padding: 20px;
+  }
 
-    /* Game Over overlay */
-    .overlay {
-      position: fixed;
-      inset: 0;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      background: rgba(0,0,0,0.72);
-      backdrop-filter: blur(6px);
-    }
-    .overlay.show { display: flex; }
+  img {
+    width: 100%;
+    max-width: 380px;
+    border-radius: 18px;
+    margin-top: 14px;
+  }
 
-    .modal {
-      width: min(520px, 92vw);
-      border-radius: 18px;
-      padding: 16px;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.14);
-      box-shadow: 0 20px 60px rgba(0,0,0,0.55);
-      text-align: center;
-    }
-    .modal h2 {
-      margin: 0 0 6px;
-      font-size: 1.6rem;
-      letter-spacing: 0.06em;
-    }
-    .modal p { margin: 6px 0 12px; opacity: 0.9; }
+  input {
+    font-size: 1.5rem;
+    text-transform: uppercase;
+    text-align: center;
+    width: 120px;
+    margin-top: 10px;
+  }
 
-    .initials {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin: 12px 0 14px;
-    }
-    .initials input {
-      width: 64px;
-      height: 64px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.18);
-      background: rgba(0,0,0,0.25);
-      color: #fff;
-      font-size: 2rem;
-      font-weight: 1000;
-      text-align: center;
-      text-transform: uppercase;
-      outline: none;
-    }
-
-    .modal .btnrow {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    .modal button {
-      flex: 1;
-      border: 0;
-      border-radius: 12px;
-      padding: 12px;
-      font-weight: 1000;
-      font-size: 1rem;
-    }
-    .modal button.save { background: #22c55e; color: #000; }
-    .modal button.play { background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.16); }
-    .tiny { font-size: 0.85rem; opacity: 0.75; margin-top: 8px; }
-  </style>
+  .leaderboard {
+    margin-top: 12px;
+    font-size: 1rem;
+    opacity: 0.9;
+  }
+</style>
 </head>
 
 <body>
-  <div class="wrap">
-    <div class="hud">
-      <div>Score: <span id="score">0</span></div>
-      <div>Strikes: <span id="strikes">0</span>/3</div>
-    </div>
 
-    <div class="number" id="number">—</div>
-    <button class="primary" id="tap">Tap ONLY if odd</button>
-    <div class="hint">Numbers change automatically (1–999). Tap only on odd.</div>
-
-    <div class="board">
-      <h3>High Scores</h3>
-      <div id="leaderboard"></div>
-    </div>
+<div class="game">
+  <div class="hud">
+    <div>Score: <span id="score">0</span></div>
+    <div>Strikes: <span id="strikes"></span></div>
   </div>
 
-  <!-- Game Over / Initials overlay -->
-  <div class="overlay" id="overlay">
-    <div class="modal">
-      <h2>GAME OVER</h2>
-      <p>Your score: <span id="finalScore">0</span></p>
+  <div class="number" id="number">0</div>
+  <button id="tap">Tap ONLY if odd</button>
+</div>
 
-      <div id="qualifyBlock" style="display:none;">
-        <p style="margin-bottom:6px;">Enter initials</p>
-        <div class="initials">
-          <input id="i1" maxlength="1" inputmode="text" autocomplete="off" />
-          <input id="i2" maxlength="1" inputmode="text" autocomplete="off" />
-          <input id="i3" maxlength="1" inputmode="text" autocomplete="off" />
-        </div>
-        <div class="tiny">A–Z / 0–9. Stored on this device.</div>
-      </div>
+<div id="overlay">
+  <div class="modal">
+    <h1>GAME OVER</h1>
+    <p>Final Score: <span id="finalScore">0</span></p>
 
-      <div class="btnrow">
-        <button class="save" id="saveBtn" style="display:none;">Save Score</button>
-        <button class="play" id="playAgainBtn">Play Again</button>
-      </div>
+    <img id="memeImg" src="Screenshot_20260118-114905.png" alt="Game Over" />
+
+    <div>
+      <p>Enter Initials</p>
+      <input id="initials" maxlength="3" />
     </div>
+
+    <button id="playAgain">Play Again</button>
+
+    <div class="leaderboard" id="leaderboard"></div>
   </div>
+</div>
 
-  <script>
-    /* ---------------------------
-       GAME CONFIG (slower + erratic + ramps)
-    ---------------------------- */
-    const MIN = 1;
-    const MAX = 999;
+<script>
+let current = 0;
+let score = 0;
+let strikes = 0;
+let speed = 420;
+let running = false;
+let timer;
 
-    // Start slower (tweak these if you want)
-    const START_MIN_DELAY = 360;
-    const START_MAX_DELAY = 1150;
+const numberEl = document.getElementById("number");
+const scoreEl = document.getElementById("score");
+const strikeEl = document.getElementById("strikes");
+const overlay = document.getElementById("overlay");
+const memeImg = document.getElementById("memeImg");
 
-    // Floors so it never becomes unhuman
-    const MIN_DELAY_FLOOR = 140;
-    const MAX_DELAY_FLOOR = 360;
+function randomNumber() {
+  return Math.floor(Math.random() * 999) + 1;
+}
 
-    // Ramp (gentle)
-    const MIN_DELAY_STEP = 2;
-    const MAX_DELAY_STEP = 4;
+function updateHUD() {
+  scoreEl.textContent = score;
+  strikeEl.textContent = "X".repeat(strikes);
+}
 
-    // Erratic feel
-    const JITTER = 140;
+function startGame() {
+  score = 0;
+  strikes = 0;
+  speed = 420;
+  running = true;
+  updateHUD();
+  nextTick();
+}
 
-    const MAX_STRIKES = 3;
+function stopGame() {
+  running = false;
+  clearTimeout(timer);
+}
 
-    /* ---------------------------
-       LEADERBOARD STORAGE
-    ---------------------------- */
-    const LS_KEY = "odd_only_leaderboard_v1";
-    const MAX_SCORES = 10;
+function nextTick() {
+  if (!running) return;
 
-    function loadBoard() {
-      try {
-        const raw = localStorage.getItem(LS_KEY);
-        const arr = raw ? JSON.parse(raw) : [];
-        if (!Array.isArray(arr)) return [];
-        return arr
-          .filter(e => e && typeof e.name === "string" && typeof e.score === "number")
-          .map(e => ({ name: e.name.slice(0,3).toUpperCase(), score: Math.max(0, Math.floor(e.score)) }))
-          .sort((a,b) => b.score - a.score)
-          .slice(0, MAX_SCORES);
-      } catch {
-        return [];
-      }
-    }
+  current = randomNumber();
+  numberEl.textContent = current;
 
-    function saveBoard(board) {
-      localStorage.setItem(LS_KEY, JSON.stringify(board.slice(0, MAX_SCORES)));
-    }
+  speed = Math.max(120, speed * (0.96 + Math.random() * 0.04));
+  timer = setTimeout(nextTick, speed);
+}
 
-    function qualifies(score, board) {
-      if (board.length < MAX_SCORES) return score > 0;
-      const last = board[board.length - 1]?.score ?? 0;
-      return score > last;
-    }
+document.getElementById("tap").addEventListener("click", () => {
+  if (!running) return;
 
-    function renderBoard() {
-      const board = loadBoard();
-      const el = document.getElementById("leaderboard");
-      if (board.length === 0) {
-        el.innerHTML = '<div style="opacity:.75;">No scores yet. Be the first.</div>';
-        return;
-      }
-      el.innerHTML = board.map((e, idx) => `
-        <div class="row">
-          <div class="rank">${String(idx+1).padStart(2,"0")}</div>
-          <div class="name">${e.name}</div>
-          <div class="pts">${e.score}</div>
-        </div>
-      `).join("");
-    }
+  if (current % 2 === 1) {
+    score++;
+    updateHUD();
+  } else {
+    strikes++;
+    updateHUD();
+    if (strikes >= 3) endGame();
+  }
+});
 
-    /* ---------------------------
-       GAME STATE
-    ---------------------------- */
-    let current = 0;
-    let score = 0;
-    let strikes = 0;
-    let timer = null;
-    let running = false;
+function endGame() {
+  stopGame();
+  overlay.classList.add("show");
+  document.getElementById("finalScore").textContent = score;
+  renderLeaderboard();
+}
 
-    const numberEl = document.getElementById("number");
-    const tapBtn = document.getElementById("tap");
-    const scoreEl = document.getElementById("score");
-    const strikesEl = document.getElementById("strikes");
+function saveScore(initials) {
+  const board = JSON.parse(localStorage.getItem("odd-only-scores") || "[]");
+  board.push({ initials, score });
+  board.sort((a,b) => b.score - a.score);
+  localStorage.setItem("odd-only-scores", JSON.stringify(board.slice(0,5)));
+}
 
-    const overlay = document.getElementById("overlay");
-    const finalScoreEl = document.getElementById("finalScore");
-    const qualifyBlock = document.getElementById("qualifyBlock");
-    const saveBtn = document.getElementById("saveBtn");
-    const playAgainBtn = document.getElementById("playAgainBtn");
+function renderLeaderboard() {
+  const board = JSON.parse(localStorage.getItem("odd-only-scores") || "[]");
+  document.getElementById("leaderboard").innerHTML =
+    "<h3>High Scores</h3>" +
+    board.map(e => `${e.initials} — ${e.score}`).join("<br>");
+}
 
-    const i1 = document.getElementById("i1");
-    const i2 = document.getElementById("i2");
-    const i3 = document.getElementById("i3");
+document.getElementById("playAgain").addEventListener("click", () => {
+  const initials = document.getElementById("initials").value || "???";
+  saveScore(initials.toUpperCase());
+  document.getElementById("initials").value = "";
+  overlay.classList.remove("show");
+  startGame();
+});
 
-    function randInt(min, max) {
-      return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
+startGame();
 
-    function updateHUD() {
-      scoreEl.textContent = String(score);
-      strikesEl.textContent = String(strikes);
-    }
+/* PWA safe */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js");
+  });
+}
+</script>
 
-    function computeDelay() {
-      const minDelay = Math.max(MIN_DELAY_FLOOR, START_MIN_DELAY - score * MIN_DELAY_STEP);
-      const maxDelay = Math.max(MAX_DELAY_FLOOR, START_MAX_DELAY - score * MAX_DELAY_STEP);
-      const base = randInt(Math.min(minDelay, maxDelay), Math.max(minDelay, maxDelay));
-      const jitter = randInt(-JITTER, JITTER);
-      return Math.max(80, base + jitter);
-    }
-
-    function nextNumber() {
-      current = randInt(MIN, MAX);
-      numberEl.textContent = String(current);
-    }
-
-    function scheduleNext() {
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        if (!running) return;
-        nextNumber();
-        scheduleNext();
-      }, computeDelay());
-    }
-
-    function startGame() {
-      running = true;
-      score = 0;
-      strikes = 0;
-      updateHUD();
-      nextNumber();
-      scheduleNext();
-    }
-
-    function stopGame() {
-      running = false;
-      clearTimeout(timer);
-      timer = null;
-    }
-
-    function sanitizeChar(ch) {
-      const up = (ch || "").toUpperCase();
-      return /^[A-Z0-9]$/.test(up) ? up : "";
-    }
-
-    function focusFlow(input, next) {
-      input.addEventListener("input", () => {
-        input.value = sanitizeChar(input.value);
-        if (input.value && next) next.focus();
-      });
-      input.addEventListener("keydown", (e) => {
-        if (e.key === "Backspace" && !input.value) {
-          // move back if empty
-          if (input === i3) i2.focus();
-          if (input === i2) i1.focus();
-        }
-      });
-    }
-
-    focusFlow(i1, i2);
-    focusFlow(i2, i3);
-    focusFlow(i3, null);
-
-    function openGameOver() {
-      stopGame();
-      finalScoreEl.textContent = String(score);
-
-      const board = loadBoard();
-      const canSave = qualifies(score, board);
-
-      qualifyBlock.style.display = canSave ? "block" : "none";
-      saveBtn.style.display = canSave ? "block" : "none";
-
-      // clear initials
-      i1.value = ""; i2.value = ""; i3.value = "";
-      overlay.classList.add("show");
-
-      // focus first initial if needed
-      if (canSave) setTimeout(() => i1.focus(), 50);
-    }
-
-    function closeGameOver() {
-      overlay.classList.remove("show");
-    }
-
-    function saveScore() {
-      const name = (sanitizeChar(i1.value) || "A") +
-                   (sanitizeChar(i2.value) || "A") +
-                   (sanitizeChar(i3.value) || "A");
-
-      const board = loadBoard();
-      board.push({ name, score });
-      board.sort((a,b) => b.score - a.score);
-      const trimmed = board.slice(0, MAX_SCORES);
-      saveBoard(trimmed);
-      renderBoard();
-    }
-
-    // Tap only if odd
-    tapBtn.addEventListener("click", () => {
-      if (!running) return;
-
-      if (current % 2 === 1) {
-        score += 1;
-        updateHUD();
-        // immediate change + reschedule keeps it snappy but fair
-        nextNumber();
-        scheduleNext();
-      } else {
-        strikes += 1;
-        updateHUD();
-        numberEl.textContent = "X";
-        setTimeout(() => {
-          if (!running) return;
-          nextNumber();
-          scheduleNext();
-        }, 180);
-
-        if (strikes >= MAX_STRIKES) {
-          // give the player the "X" beat, then end
-          setTimeout(openGameOver, 220);
-        }
-      }
-    });
-
-    saveBtn.addEventListener("click", () => {
-      saveScore();
-      // After saving, switch button to "Play Again" only
-      qualifyBlock.style.display = "none";
-      saveBtn.style.display = "none";
-    });
-
-    playAgainBtn.addEventListener("click", () => {
-      closeGameOver();
-      startGame();
-    });
-
-    // Initial render
-    renderBoard();
-    startGame();
-
-    // Service worker (GitHub Pages-safe path)
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("/odd-only/sw.js").catch(() => {});
-      });
-    }
-  </script>
 </body>
 </html>
