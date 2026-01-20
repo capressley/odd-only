@@ -23,17 +23,18 @@
       flex-direction: column;
       align-items: center;
       gap: 1.2rem;
+      width: 100%;
+      padding: 16px;
+      box-sizing: border-box;
     }
 
-    .active {
-      display: flex;
-    }
+    .active { display: flex; }
 
     img {
-      max-width: 90vw;
-      max-height: 60vh;
-      border-radius: 12px;
-      box-shadow: 0 0 40px rgba(0,255,140,0.4);
+      width: min(520px, 92vw);
+      height: auto;
+      border-radius: 14px;
+      box-shadow: 0 0 40px rgba(0,255,140,0.35);
     }
 
     button {
@@ -43,13 +44,20 @@
       border: none;
       background: #22c55e;
       color: #000;
-      font-weight: bold;
+      font-weight: 800;
     }
 
     .number {
       font-size: 6rem;
-      font-weight: bold;
-      margin-bottom: 1rem;
+      font-weight: 800;
+      margin: 0;
+      line-height: 1;
+    }
+
+    .hint {
+      opacity: 0.85;
+      font-size: 1rem;
+      max-width: 520px;
     }
   </style>
 </head>
@@ -59,6 +67,9 @@
   <!-- WELCOME SCREEN -->
   <div id="welcome" class="screen active">
     <img src="file_00000009e2071f8af64e901b2658e3f.png" alt="Odd-Only Arcade">
+    <div class="hint">
+      Tap ONLY when the number is odd. Tap on even and it’s game over.
+    </div>
     <button id="startBtn">START</button>
   </div>
 
@@ -71,6 +82,7 @@
   <!-- GAME OVER SCREEN -->
   <div id="gameOver" class="screen">
     <img src="file_00000009e2071f8af64e901b2658e3f.png" alt="Game Over">
+    <div class="hint">Game over.</div>
     <button id="restartBtn">PLAY AGAIN</button>
   </div>
 
@@ -78,8 +90,8 @@
   const welcome = document.getElementById("welcome");
   const game = document.getElementById("game");
   const gameOver = document.getElementById("gameOver");
-  const numberEl = document.getElementById("number");
 
+  const numberEl = document.getElementById("number");
   const startBtn = document.getElementById("startBtn");
   const tapBtn = document.getElementById("tapBtn");
   const restartBtn = document.getElementById("restartBtn");
@@ -94,26 +106,33 @@
   }
 
   function nextNumber() {
-    current = Math.floor(Math.random() * 999) + 1;
+    current = Math.floor(Math.random() * 999) + 1; // 1..999
     numberEl.textContent = current;
   }
 
-  startBtn.onclick = () => {
+  startBtn.addEventListener("click", () => {
     show(game);
     nextNumber();
-  };
+  });
 
-  tapBtn.onclick = () => {
+  tapBtn.addEventListener("click", () => {
     if (current % 2 === 1) {
       nextNumber();
     } else {
       show(gameOver);
     }
-  };
+  });
 
-  restartBtn.onclick = () => {
+  restartBtn.addEventListener("click", () => {
     show(welcome);
-  };
+  });
+
+  // Register service worker (safe) with cache-buster
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js?v=7");
+    });
+  }
 </script>
 
 </body>
