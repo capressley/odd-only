@@ -6,80 +6,50 @@
   <title>Odd-Only Arcade</title>
 
   <style>
-    html, body {
+    body {
       margin: 0;
-      padding: 0;
-      height: 100%;
       background: #000;
-      color: #0f0;
+      color: #fff;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
     }
 
     .screen {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: #000;
-      z-index: 10;
-      text-align: center;
-      padding: 16px;
-      box-sizing: border-box;
-    }
-
-    .screen img {
-      max-width: min(92vw, 520px);
-      max-height: 70vh;
-      width: auto;
-      height: auto;
-      margin-bottom: 1rem;
-      border-radius: 18px;
-      box-shadow: 0 0 40px rgba(34, 197, 94, 0.25);
-    }
-
-    .screen button {
-      font-size: 1.5rem;
-      padding: 1rem 2rem;
-      border-radius: 12px;
-      border: none;
-      background: #22c55e;
-      color: #000;
-      cursor: pointer;
-      font-weight: 700;
-    }
-
-    #game {
       display: none;
-      height: 100%;
-      align-items: center;
-      justify-content: center;
       flex-direction: column;
-      text-align: center;
+      align-items: center;
+      gap: 1.2rem;
     }
 
-    #number {
-      font-size: clamp(4.5rem, 12vw, 7rem);
-      margin-bottom: 1rem;
-      color: #fff;
+    .active {
+      display: flex;
     }
 
-    #tap {
-      font-size: 2rem;
+    img {
+      max-width: 90vw;
+      max-height: 60vh;
+      border-radius: 12px;
+      box-shadow: 0 0 40px rgba(0,255,140,0.4);
+    }
+
+    button {
+      font-size: 1.4rem;
       padding: 1rem 2.5rem;
       border-radius: 14px;
       border: none;
       background: #22c55e;
       color: #000;
-      font-weight: 800;
+      font-weight: bold;
     }
 
-    #score {
-      margin-top: 1rem;
-      font-size: 1.2rem;
-      color: #9aff9a;
-      opacity: 0.95;
+    .number {
+      font-size: 6rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
     }
   </style>
 </head>
@@ -87,74 +57,63 @@
 <body>
 
   <!-- WELCOME SCREEN -->
-  <div id="welcome" class="screen">
-    <img src="file_00000009e20718af64e90abcd.png" alt="Odd-Only Arcade">
-    <button onclick="startGame()">Start</button>
+  <div id="welcome" class="screen active">
+    <img src="file_00000009e2071f8af64e901b2658e3f.png" alt="Odd-Only Arcade">
+    <button id="startBtn">START</button>
   </div>
 
-  <!-- GAME -->
-  <div id="game">
-    <div id="number">–</div>
-    <button id="tap">Tap ONLY if odd</button>
-    <div id="score">Score: 0</div>
+  <!-- GAME SCREEN -->
+  <div id="game" class="screen">
+    <div id="number" class="number">?</div>
+    <button id="tapBtn">Tap ONLY if odd</button>
   </div>
 
-  <!-- END SCREEN -->
-  <div id="end" class="screen" style="display:none;">
-    <img src="file_00000009e20718af64e90abcd.png" alt="Game Over">
-    <div style="margin-bottom:1rem;font-size:1.5rem;color:#fff;">
-      Final Score: <span id="finalScore"></span>
-    </div>
-    <button onclick="startGame()">Play Again</button>
+  <!-- GAME OVER SCREEN -->
+  <div id="gameOver" class="screen">
+    <img src="file_00000009e2071f8af64e901b2658e3f.png" alt="Game Over">
+    <button id="restartBtn">PLAY AGAIN</button>
   </div>
 
 <script>
-  let current = 0;
-  let score = 0;
-  let interval = null;
-
+  const welcome = document.getElementById("welcome");
+  const game = document.getElementById("game");
+  const gameOver = document.getElementById("gameOver");
   const numberEl = document.getElementById("number");
-  const scoreEl = document.getElementById("score");
-  const tapBtn = document.getElementById("tap");
 
-  function randomNumber() {
-    return Math.floor(Math.random() * 999) + 1; // 1–999
+  const startBtn = document.getElementById("startBtn");
+  const tapBtn = document.getElementById("tapBtn");
+  const restartBtn = document.getElementById("restartBtn");
+
+  let current = 0;
+
+  function show(screen) {
+    welcome.classList.remove("active");
+    game.classList.remove("active");
+    gameOver.classList.remove("active");
+    screen.classList.add("active");
   }
 
-  function showNext() {
-    current = randomNumber();
+  function nextNumber() {
+    current = Math.floor(Math.random() * 999) + 1;
     numberEl.textContent = current;
   }
 
-  tapBtn.addEventListener("click", () => {
+  startBtn.onclick = () => {
+    show(game);
+    nextNumber();
+  };
+
+  tapBtn.onclick = () => {
     if (current % 2 === 1) {
-      score++;
-      scoreEl.textContent = `Score: ${score}`;
-      showNext();
+      nextNumber();
     } else {
-      endGame();
+      show(gameOver);
     }
-  });
+  };
 
-  function startGame() {
-    document.getElementById("welcome").style.display = "none";
-    document.getElementById("end").style.display = "none";
-    document.getElementById("game").style.display = "flex";
-
-    score = 0;
-    scoreEl.textContent = "Score: 0";
-    showNext();
-
-    clearInterval(interval);
-    interval = setInterval(showNext, 1200); // steady speed (no speed-up)
-  }
-
-  function endGame() {
-    clearInterval(interval);
-    document.getElementById("game").style.display = "none";
-    document.getElementById("finalScore").textContent = score;
-    document.getElementById("end").style.display = "flex";
-  }
+  restartBtn.onclick = () => {
+    show(welcome);
+  };
 </script>
 
 </body>
