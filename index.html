@@ -10,7 +10,7 @@
       margin: 0;
       background: #000;
       color: #fff;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: system-ui, sans-serif;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -22,148 +22,109 @@
       display: none;
       flex-direction: column;
       align-items: center;
-      gap: 14px;
+      gap: 16px;
       width: 100%;
-      padding: 16px;
-      box-sizing: border-box;
+      max-width: 420px;
+      padding: 20px;
     }
 
-    .active { display: flex; }
+    .active {
+      display: flex;
+    }
 
     img {
-      width: min(520px, 92vw);
-      height: auto;
-      border-radius: 14px;
-      box-shadow: 0 0 40px rgba(0,255,140,0.35);
-    }
-
-    button {
-      font-size: 1.4rem;
-      padding: 1rem 2.5rem;
-      border-radius: 14px;
-      border: none;
-      background: #22c55e;
-      color: #000;
-      font-weight: 800;
+      max-width: 100%;
+      border-radius: 12px;
     }
 
     .number {
-      font-size: 6rem;
-      font-weight: 900;
-      margin: 10px 0 0 0;
-      line-height: 1;
-      text-shadow: 0 0 28px rgba(0,255,140,0.25);
+      font-size: 5rem;
+      font-weight: bold;
     }
 
-    .hud {
-      opacity: 0.85;
-      font-size: 1.1rem;
-      margin-bottom: 6px;
+    button {
+      font-size: 1.5rem;
+      padding: 14px 32px;
+      border: none;
+      border-radius: 12px;
+      background: #5fd37a;
+      color: #000;
+      font-weight: bold;
     }
 
-    .hint {
-      opacity: 0.85;
+    .instructions {
       font-size: 1rem;
-      max-width: 520px;
-      line-height: 1.35;
+      opacity: 0.9;
     }
   </style>
 </head>
-
 <body>
 
   <!-- WELCOME -->
   <div id="welcome" class="screen active">
-    <img id="welcomeImg" src="./file_00000009e2071f8af64e901b2658e3f.png" alt="Odd-Only Arcade">
-    <div class="hint">
-      <b>How to play:</b><br>
-      Tap the button ONLY when the number is odd.<br>
+    <img src="file_00000009e20718af64e90b1b2658e3f.png" alt="Odd-Only Arcade">
+    <h1>Odd-Only Arcade</h1>
+    <div class="instructions">
+      Tap ONLY when the number is odd.<br>
       Tap on an even number and the game ends.
     </div>
     <button id="startBtn">START</button>
-    <div id="imgStatus" class="hint"></div>
   </div>
 
   <!-- GAME -->
   <div id="game" class="screen">
-    <div class="hud">Tap ONLY if odd</div>
-    <div id="number" class="number">?</div>
-    <button id="tapBtn">TAP</button>
+    <div id="number" class="number">1</div>
+    <button id="tapBtn">Tap ONLY if odd</button>
   </div>
 
   <!-- GAME OVER -->
   <div id="gameOver" class="screen">
-    <img id="overImg" src="./file_00000009e2071f8af64e901b2658e3f.png" alt="Game Over">
-    <div class="hint">Game over.</div>
-    <button id="restartBtn">PLAY AGAIN</button>
+    <img src="file_00000009e20718af64e90b1b2658e3f.png" alt="Game Over">
+    <h2>Game Over</h2>
+    <button id="restartBtn">Play Again</button>
   </div>
 
-<script>
-  // HARD STOP: remove any service worker caching that might be breaking things
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.getRegistrations().then(regs => {
-      regs.forEach(r => r.unregister());
-    });
-  }
+  <script>
+    const welcome = document.getElementById("welcome");
+    const game = document.getElementById("game");
+    const gameOver = document.getElementById("gameOver");
 
-  const welcome = document.getElementById("welcome");
-  const game = document.getElementById("game");
-  const gameOver = document.getElementById("gameOver");
+    const numberEl = document.getElementById("number");
+    const startBtn = document.getElementById("startBtn");
+    const tapBtn = document.getElementById("tapBtn");
+    const restartBtn = document.getElementById("restartBtn");
 
-  const numberEl = document.getElementById("number");
-  const startBtn = document.getElementById("startBtn");
-  const tapBtn = document.getElementById("tapBtn");
-  const restartBtn = document.getElementById("restartBtn");
+    let current = 1;
 
-  const imgStatus = document.getElementById("imgStatus");
-  const welcomeImg = document.getElementById("welcomeImg");
-  const overImg = document.getElementById("overImg");
-
-  let current = 0;
-
-  function show(screen) {
-    welcome.classList.remove("active");
-    game.classList.remove("active");
-    gameOver.classList.remove("active");
-    screen.classList.add("active");
-  }
-
-  function nextNumber() {
-    current = Math.floor(Math.random() * 999) + 1; // 1..999
-    numberEl.textContent = current;
-  }
-
-  startBtn.addEventListener("click", () => {
-    show(game);
-    nextNumber();
-  });
-
-  tapBtn.addEventListener("click", () => {
-    if (current % 2 === 1) {
-      nextNumber();
-    } else {
-      show(gameOver);
+    function show(screen) {
+      welcome.classList.remove("active");
+      game.classList.remove("active");
+      gameOver.classList.remove("active");
+      screen.classList.add("active");
     }
-  });
 
-  restartBtn.addEventListener("click", () => {
-    show(welcome);
-  });
+    function nextNumber() {
+      current = Math.floor(Math.random() * 999) + 1;
+      numberEl.textContent = current;
+    }
 
-  // Debug info for the image (so we can SEE what’s wrong)
-  welcomeImg.addEventListener("load", () => {
-    imgStatus.textContent = "✅ Welcome image loaded.";
-  });
-  welcomeImg.addEventListener("error", () => {
-    imgStatus.textContent =
-      "❌ Welcome image failed to load. This usually means the filename/path is wrong or GitHub Pages hasn't updated yet.";
-  });
+    startBtn.onclick = () => {
+      show(game);
+      nextNumber();
+    };
 
-  overImg.addEventListener("error", () => {
-    // If welcome loads but gameover doesn't, we still want to know
-    console.log("Game-over image failed to load.");
-  });
-</script>
+    tapBtn.onclick = () => {
+      if (current % 2 === 1) {
+        nextNumber();
+      } else {
+        show(gameOver);
+      }
+    };
+
+    restartBtn.onclick = () => {
+      show(welcome);
+    };
+  </script>
 
 </body>
 </html>
