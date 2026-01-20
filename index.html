@@ -3,223 +3,495 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Odd-Only Reaction Game</title>
+<title>Odd-Only Arcade</title>
 
 <link rel="manifest" href="manifest.webmanifest" />
 <meta name="theme-color" content="#111111" />
 
 <style>
-  body {
+  html, body {
     margin: 0;
+    padding: 0;
+    height: 100%;
     background: #111;
     color: #fff;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  .wrap {
+    width: min(560px, 92vw);
+    margin: 0 auto;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 100vh;
     text-align: center;
+    padding: 16px;
   }
 
-  .game {
+  .card {
     width: 100%;
-    max-width: 420px;
-    padding: 20px;
+    border-radius: 18px;
+    padding: 16px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.14);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+  }
+
+  .title {
+    font-weight: 1000;
+    letter-spacing: 0.06em;
+    margin: 8px 0 6px;
+    font-size: 1.6rem;
+  }
+
+  .subtitle {
+    opacity: 0.8;
+    margin: 0 0 12px;
+    font-size: 1rem;
+  }
+
+  .img {
+    width: 100%;
+    max-width: 460px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    margin: 10px auto 14px;
+    display: block;
   }
 
   .hud {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 12px;
-    font-size: 1.2rem;
+    gap: 10px;
+    font-weight: 900;
+    opacity: 0.9;
+    margin-bottom: 10px;
   }
 
   .number {
-    font-size: 6rem;
-    margin: 20px 0;
+    font-size: 5.2rem;
+    line-height: 1;
+    margin: 14px 0 16px;
+    user-select: none;
   }
 
   button {
-    font-size: 1.8rem;
-    padding: 1.2rem 2rem;
+    width: 100%;
+    font-size: 1.6rem;
+    padding: 1.05rem 1.25rem;
     border-radius: 14px;
     border: none;
-    background: #58d26a;
-    color: #000;
-    font-weight: bold;
-    width: 100%;
+    font-weight: 1000;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
   }
 
-  #overlay {
+  button.primary { background: #22c55e; color: #000; }
+  button.secondary {
+    margin-top: 10px;
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.16);
+  }
+  button:active { transform: scale(0.99); }
+
+  .board {
+    margin-top: 14px;
+    padding: 12px;
+    border-radius: 14px;
+    background: rgba(0,0,0,0.20);
+    border: 1px solid rgba(255,255,255,0.10);
+    text-align: left;
+  }
+  .board h3 {
+    margin: 0 0 10px 0;
+    font-size: 0.95rem;
+    opacity: 0.9;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 34px 1fr auto;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    font-variant-numeric: tabular-nums;
+  }
+  .row:last-child { border-bottom: none; }
+  .rank { opacity: 0.7; }
+  .name { font-weight: 1000; letter-spacing: 0.10em; }
+  .pts { font-weight: 1000; }
+
+  /* Overlay */
+  .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.88);
     display: none;
     align-items: center;
     justify-content: center;
+    padding: 16px;
+    background: rgba(0,0,0,0.78);
+    backdrop-filter: blur(6px);
     z-index: 10;
   }
-
-  #overlay.show {
-    display: flex;
-  }
+  .overlay.show { display: flex; }
 
   .modal {
-    text-align: center;
-    padding: 20px;
-  }
-
-  img {
-    width: 100%;
-    max-width: 380px;
+    width: min(520px, 92vw);
     border-radius: 18px;
-    margin-top: 14px;
-  }
-
-  input {
-    font-size: 1.5rem;
-    text-transform: uppercase;
+    padding: 16px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.14);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.55);
     text-align: center;
-    width: 120px;
+  }
+  .modal h2 {
+    margin: 0 0 6px;
+    font-size: 1.5rem;
+    letter-spacing: 0.08em;
+  }
+  .modal p { margin: 6px 0 12px; opacity: 0.9; }
+
+  .initials {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 10px 0 10px;
+  }
+  .initials input {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(0,0,0,0.25);
+    color: #fff;
+    font-size: 2rem;
+    font-weight: 1000;
+    text-align: center;
+    text-transform: uppercase;
+    outline: none;
+  }
+  .tiny { font-size: 0.85rem; opacity: 0.75; margin-top: 6px; }
+
+  .btnrow {
+    display: flex;
+    gap: 10px;
     margin-top: 10px;
   }
-
-  .leaderboard {
-    margin-top: 12px;
-    font-size: 1rem;
-    opacity: 0.9;
-  }
+  .btnrow button { font-size: 1rem; padding: 12px; }
 </style>
 </head>
 
 <body>
+<div class="wrap">
+  <div class="card">
 
-<div class="game">
-  <div class="hud">
-    <div>Score: <span id="score">0</span></div>
-    <div>Strikes: <span id="strikes"></span></div>
-  </div>
+    <!-- WELCOME SCREEN -->
+    <div id="welcome">
+      <div class="title">ODD-ONLY ARCADE</div>
+      <div class="subtitle">Tap only odd numbers. Three strikes and you’re out.</div>
 
-  <div class="number" id="number">0</div>
-  <button id="tap">Tap ONLY if odd</button>
-</div>
+      <img class="img" src="Screenshot_20260118-114905.png" alt="Welcome image" />
 
-<div id="overlay">
-  <div class="modal">
-    <h1>GAME OVER</h1>
-    <p>Final Score: <span id="finalScore">0</span></p>
+      <button class="primary" id="startBtn">Start</button>
 
-    <img id="memeImg" src="Screenshot_20260118-114905.png" alt="Game Over" />
-
-    <div>
-      <p>Enter Initials</p>
-      <input id="initials" maxlength="3" />
+      <div class="board">
+        <h3>High Scores (This Device)</h3>
+        <div id="leaderboard"></div>
+      </div>
     </div>
 
-    <button id="playAgain">Play Again</button>
+    <!-- GAME SCREEN -->
+    <div id="game" style="display:none;">
+      <div class="hud">
+        <div>Score: <span id="score">0</span></div>
+        <div>Strikes: <span id="strikes">0</span>/3</div>
+      </div>
 
-    <div class="leaderboard" id="leaderboard"></div>
+      <div class="number" id="number">—</div>
+      <button class="primary" id="tapBtn">Tap ONLY if odd</button>
+      <button class="secondary" id="quitBtn">Quit to Welcome</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- GAME OVER OVERLAY -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2>GAME OVER</h2>
+    <p>Your score: <span id="finalScore">0</span></p>
+
+    <img class="img" src="Screenshot_20260118-114905.png" alt="Game over image" />
+
+    <div id="qualifyBlock" style="display:none;">
+      <p style="margin-bottom:6px;">Enter initials</p>
+      <div class="initials">
+        <input id="i1" maxlength="1" inputmode="text" autocomplete="off" />
+        <input id="i2" maxlength="1" inputmode="text" autocomplete="off" />
+        <input id="i3" maxlength="1" inputmode="text" autocomplete="off" />
+      </div>
+      <div class="tiny">A–Z / 0–9. Saved on this phone.</div>
+    </div>
+
+    <div class="btnrow">
+      <button class="primary" id="saveBtn" style="display:none;">Save Score</button>
+      <button class="secondary" id="playAgainBtn">Back to Welcome</button>
+    </div>
   </div>
 </div>
 
 <script>
-let current = 0;
-let score = 0;
-let strikes = 0;
-let speed = 420;
-let running = false;
-let timer;
+  /* ---------------------------
+     CONFIG (NO SPEED-UP)
+  ---------------------------- */
+  const MIN = 1;
+  const MAX = 999;
 
-const numberEl = document.getElementById("number");
-const scoreEl = document.getElementById("score");
-const strikeEl = document.getElementById("strikes");
-const overlay = document.getElementById("overlay");
-const memeImg = document.getElementById("memeImg");
+  // Constant base speed (ms). Increase = slower.
+  const BASE_SPEED_MS = 850;
 
-function randomNumber() {
-  return Math.floor(Math.random() * 999) + 1;
-}
+  // Optional erratic timing around the base. Set to 0 for perfectly steady timing.
+  const JITTER_MS = 180;
 
-function updateHUD() {
-  scoreEl.textContent = score;
-  strikeEl.textContent = "X".repeat(strikes);
-}
+  const MAX_STRIKES = 3;
 
-function startGame() {
-  score = 0;
-  strikes = 0;
-  speed = 420;
-  running = true;
-  updateHUD();
-  nextTick();
-}
+  /* ---------------------------
+     LEADERBOARD
+  ---------------------------- */
+  const LS_KEY = "odd_only_leaderboard_v2";
+  const MAX_SCORES = 10;
 
-function stopGame() {
-  running = false;
-  clearTimeout(timer);
-}
-
-function nextTick() {
-  if (!running) return;
-
-  current = randomNumber();
-  numberEl.textContent = current;
-
-  speed = Math.max(120, speed * (0.96 + Math.random() * 0.04));
-  timer = setTimeout(nextTick, speed);
-}
-
-document.getElementById("tap").addEventListener("click", () => {
-  if (!running) return;
-
-  if (current % 2 === 1) {
-    score++;
-    updateHUD();
-  } else {
-    strikes++;
-    updateHUD();
-    if (strikes >= 3) endGame();
+  function loadBoard() {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(arr)) return [];
+      return arr
+        .filter(e => e && typeof e.name === "string" && typeof e.score === "number")
+        .map(e => ({ name: e.name.slice(0,3).toUpperCase(), score: Math.max(0, Math.floor(e.score)) }))
+        .sort((a,b) => b.score - a.score)
+        .slice(0, MAX_SCORES);
+    } catch {
+      return [];
+    }
   }
-});
 
-function endGame() {
-  stopGame();
-  overlay.classList.add("show");
-  document.getElementById("finalScore").textContent = score;
-  renderLeaderboard();
-}
+  function saveBoard(board) {
+    localStorage.setItem(LS_KEY, JSON.stringify(board.slice(0, MAX_SCORES)));
+  }
 
-function saveScore(initials) {
-  const board = JSON.parse(localStorage.getItem("odd-only-scores") || "[]");
-  board.push({ initials, score });
-  board.sort((a,b) => b.score - a.score);
-  localStorage.setItem("odd-only-scores", JSON.stringify(board.slice(0,5)));
-}
+  function qualifies(score, board) {
+    if (score <= 0) return false;
+    if (board.length < MAX_SCORES) return true;
+    const last = board[board.length - 1]?.score ?? 0;
+    return score > last;
+  }
 
-function renderLeaderboard() {
-  const board = JSON.parse(localStorage.getItem("odd-only-scores") || "[]");
-  document.getElementById("leaderboard").innerHTML =
-    "<h3>High Scores</h3>" +
-    board.map(e => `${e.initials} — ${e.score}`).join("<br>");
-}
+  function renderBoard() {
+    const board = loadBoard();
+    const el = document.getElementById("leaderboard");
+    if (board.length === 0) {
+      el.innerHTML = '<div style="opacity:.75;">No scores yet. Be the first.</div>';
+      return;
+    }
+    el.innerHTML = board.map((e, idx) => `
+      <div class="row">
+        <div class="rank">${String(idx+1).padStart(2,"0")}</div>
+        <div class="name">${e.name}</div>
+        <div class="pts">${e.score}</div>
+      </div>
+    `).join("");
+  }
 
-document.getElementById("playAgain").addEventListener("click", () => {
-  const initials = document.getElementById("initials").value || "???";
-  saveScore(initials.toUpperCase());
-  document.getElementById("initials").value = "";
-  overlay.classList.remove("show");
-  startGame();
-});
+  /* ---------------------------
+     GAME STATE
+  ---------------------------- */
+  let current = 0;
+  let score = 0;
+  let strikes = 0;
+  let timer = null;
+  let running = false;
 
-startGame();
+  const welcome = document.getElementById("welcome");
+  const game = document.getElementById("game");
+  const overlay = document.getElementById("overlay");
 
-/* PWA safe */
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js");
+  const numberEl = document.getElementById("number");
+  const scoreEl = document.getElementById("score");
+  const strikesEl = document.getElementById("strikes");
+  const finalScoreEl = document.getElementById("finalScore");
+
+  const startBtn = document.getElementById("startBtn");
+  const tapBtn = document.getElementById("tapBtn");
+  const quitBtn = document.getElementById("quitBtn");
+  const playAgainBtn = document.getElementById("playAgainBtn");
+
+  const qualifyBlock = document.getElementById("qualifyBlock");
+  const saveBtn = document.getElementById("saveBtn");
+
+  const i1 = document.getElementById("i1");
+  const i2 = document.getElementById("i2");
+  const i3 = document.getElementById("i3");
+
+  function randInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function updateHUD() {
+    scoreEl.textContent = String(score);
+    strikesEl.textContent = String(strikes);
+  }
+
+  function nextNumber() {
+    current = randInt(MIN, MAX);
+    numberEl.textContent = String(current);
+  }
+
+  function nextDelay() {
+    if (JITTER_MS <= 0) return BASE_SPEED_MS;
+    return Math.max(120, BASE_SPEED_MS + randInt(-JITTER_MS, JITTER_MS));
+  }
+
+  function scheduleNext() {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      if (!running) return;
+      nextNumber();
+      scheduleNext();
+    }, nextDelay());
+  }
+
+  function startGame() {
+    score = 0;
+    strikes = 0;
+    updateHUD();
+    nextNumber();
+    running = true;
+    scheduleNext();
+
+    welcome.style.display = "none";
+    game.style.display = "block";
+  }
+
+  function stopGame() {
+    running = false;
+    clearTimeout(timer);
+    timer = null;
+  }
+
+  function sanitizeChar(ch) {
+    const up = (ch || "").toUpperCase();
+    return /^[A-Z0-9]$/.test(up) ? up : "";
+  }
+
+  function focusFlow(input, next) {
+    input.addEventListener("input", () => {
+      input.value = sanitizeChar(input.value);
+      if (input.value && next) next.focus();
+    });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Backspace" && !input.value) {
+        if (input === i3) i2.focus();
+        if (input === i2) i1.focus();
+      }
+    });
+  }
+  focusFlow(i1, i2);
+  focusFlow(i2, i3);
+  focusFlow(i3, null);
+
+  function openGameOver() {
+    stopGame();
+    finalScoreEl.textContent = String(score);
+
+    const board = loadBoard();
+    const canSave = qualifies(score, board);
+
+    qualifyBlock.style.display = canSave ? "block" : "none";
+    saveBtn.style.display = canSave ? "block" : "none";
+
+    i1.value = ""; i2.value = ""; i3.value = "";
+    overlay.classList.add("show");
+    if (canSave) setTimeout(() => i1.focus(), 50);
+  }
+
+  function closeGameOver() {
+    overlay.classList.remove("show");
+  }
+
+  function saveScore() {
+    const name = (sanitizeChar(i1.value) || "A") +
+                 (sanitizeChar(i2.value) || "A") +
+                 (sanitizeChar(i3.value) || "A");
+
+    const board = loadBoard();
+    board.push({ name, score });
+    board.sort((a,b) => b.score - a.score);
+    saveBoard(board);
+    renderBoard();
+
+    qualifyBlock.style.display = "none";
+    saveBtn.style.display = "none";
+  }
+
+  // Input: tap only odd
+  tapBtn.addEventListener("click", () => {
+    if (!running) return;
+
+    if (current % 2 === 1) {
+      score += 1;
+      updateHUD();
+      // Optional: immediate advance to keep it responsive
+      nextNumber();
+      scheduleNext();
+    } else {
+      strikes += 1;
+      updateHUD();
+      numberEl.textContent = "X";
+
+      setTimeout(() => {
+        if (!running) return;
+        nextNumber();
+        scheduleNext();
+      }, 200);
+
+      if (strikes >= MAX_STRIKES) {
+        setTimeout(openGameOver, 260);
+      }
+    }
   });
-}
-</script>
 
+  startBtn.addEventListener("click", startGame);
+
+  quitBtn.addEventListener("click", () => {
+    stopGame();
+    game.style.display = "none";
+    welcome.style.display = "block";
+    renderBoard();
+  });
+
+  saveBtn.addEventListener("click", saveScore);
+
+  playAgainBtn.addEventListener("click", () => {
+    closeGameOver();
+    game.style.display = "none";
+    welcome.style.display = "block";
+    renderBoard();
+  });
+
+  // Init
+  renderBoard();
+
+  // PWA service worker
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/odd-only/sw.js").catch(() => {});
+    });
+  }
+</script>
 </body>
 </html>
