@@ -5,115 +5,141 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Odd-Only Reaction Game</title>
 
-  <!-- PWA -->
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#111111" />
 
   <style>
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
+      height: 100%;
       background: #111;
       color: #fff;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 100vh;
       text-align: center;
     }
 
-    .container {
-      width: 100%;
+    .wrap {
+      width: min(520px, 92vw);
+    }
+
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-weight: 800;
+      opacity: 0.9;
+      margin-bottom: 14px;
+      font-size: 1.05rem;
     }
 
     .number {
-      font-size: 5rem;
-      margin-bottom: 1.5rem;
+      font-size: 5.2rem;
+      line-height: 1;
+      margin: 18px 0 20px;
+      user-select: none;
     }
 
     button {
+      width: 100%;
       font-size: 2rem;
-      padding: 1.5rem 2.5rem;
+      padding: 1.2rem 1.6rem;
       border-radius: 14px;
       border: none;
-      background: #4caf50;
+      background: #22c55e;
       color: #000;
-      font-weight: bold;
+      font-weight: 900;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    button:active {
-      transform: scale(0.97);
+    button:active { transform: scale(0.99); }
+
+    .hint {
+      margin-top: 12px;
+      opacity: 0.7;
+      font-size: 0.95rem;
     }
   </style>
 </head>
 
 <body>
-  <div class="container">
+  <div class="wrap">
+    <div class="hud">
+      <div>Score: <span id="score">0</span></div>
+      <div>Strikes: <span id="strikes">0</span>/3</div>
+    </div>
+
     <div class="number" id="number">—</div>
     <button id="tap">Tap ONLY if odd</button>
+    <div class="hint">Numbers change automatically (1–999). Tap only on odd.</div>
   </div>
 
   <script>
     /* ---------------------------
-       CONFIG
+       CONFIG (tuned slower + gentler ramp)
     ---------------------------- */
-
     const MIN = 1;
     const MAX = 999;
 
-    const START_MIN_DELAY = 180;
-    const START_MAX_DELAY = 650;
+    // Slower start than before
+    const START_MIN_DELAY = 320;
+    const START_MAX_DELAY = 1050;
 
-    const MIN_DELAY_FLOOR = 60;
-    const MAX_DELAY_FLOOR = 180;
+    // Floors so it never becomes absurd
+    const MIN_DELAY_FLOOR = 140;
+    const MAX_DELAY_FLOOR = 380;
 
-    const MIN_DELAY_STEP = 3;
-    const MAX_DELAY_STEP = 6;
+    // Gentler acceleration
+    const MIN_DELAY_STEP = 2;
+    const MAX_DELAY_STEP = 4;
 
-    const JITTER = 70; // randomness chaos
+    // Erratic timing without being nausea-inducing
+    const JITTER = 120;
+
+    const MAX_STRIKES = 3;
 
     /* ---------------------------
        STATE
     ---------------------------- */
-
     let current = 0;
     let score = 0;
+    let strikes = 0;
     let timer = null;
 
     const numberEl = document.getElementById("number");
     const tapBtn = document.getElementById("tap");
-
-    /* ---------------------------
-       HELPERS
-    ---------------------------- */
+    const scoreEl = document.getElementById("score");
+    const strikesEl = document.getElementById("strikes");
 
     function randInt(min, max) {
       return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
-    function computeDelay() {
-      const minDelay = Math.max(
-        MIN_DELAY_FLOOR,
-        START_MIN_DELAY - score * MIN_DELAY_STEP
-      );
-      const maxDelay = Math.max(
-        MAX_DELAY_FLOOR,
-        START_MAX_DELAY - score * MAX_DELAY_STEP
-      );
-
-      const base = randInt(minDelay, maxDelay);
-      const jitter = randInt(-JITTER, JITTER);
-
-      return Math.max(20, base + jitter);
+    function updateHUD() {
+      scoreEl.textContent = String(score);
+      strikesEl.textContent = String(strikes);
     }
 
-    /* ---------------------------
-       GAME LOOP
-    ---------------------------- */
+    function computeDelay() {
+      const minDelay = Math.max(MIN_DELAY_FLOOR, START_MIN_DELAY - score * MIN_DELAY_STEP);
+      const maxDelay = Math.max(MAX_DELAY_FLOOR, START_MAX_DELAY - score * MAX_DELAY_STEP);
+
+      const base = randInt(Math.min(minDelay, maxDelay), Math.max(minDelay, maxDelay));
+      const jitter = randInt(-JITTER, JITTER);
+
+      return Math.max(60, base + jitter);
+    }
 
     function nextNumber() {
       current = randInt(MIN, MAX);
-      numberEl.textContent = current;
+      numberEl.textContent = String(current);
     }
 
     function scheduleNext() {
@@ -124,36 +150,60 @@
       }, computeDelay());
     }
 
-    function fail() {
-      score = 0;
-      numberEl.textContent = "X";
+    function flash(text, ms = 180) {
+      const prev = numberEl.textContent;
+      numberEl.textContent = text;
       setTimeout(() => {
-        nextNumber();
-      }, 200);
+        numberEl.textContent = prev;
+      }, ms);
+    }
+
+    function gameOver() {
+      clearTimeout(timer);
+      timer = null;
+      numberEl.textContent = "💀";
+      setTimeout(() => {
+        start();
+      }, 800);
+    }
+
+    function start() {
+      score = 0;
+      strikes = 0;
+      updateHUD();
+      nextNumber();
+      scheduleNext();
     }
 
     tapBtn.addEventListener("click", () => {
+      // Odd = success
       if (current % 2 === 1) {
-        score++;
-        nextNumber();     // instant change
-        scheduleNext();   // faster timing
+        score += 1;
+        updateHUD();
+        // Immediate change keeps it snappy, but not unfair
+        nextNumber();
+        scheduleNext();
+        return;
+      }
+
+      // Even = strike
+      strikes += 1;
+      updateHUD();
+      flash("X", 160);
+
+      if (strikes >= MAX_STRIKES) {
+        gameOver();
       } else {
-        fail();
+        // Keep going
+        nextNumber();
         scheduleNext();
       }
     });
 
-    /* ---------------------------
-       START
-    ---------------------------- */
+    // Start immediately
+    start();
 
-    nextNumber();
-    scheduleNext();
-
-    /* ---------------------------
-       SERVICE WORKER
-    ---------------------------- */
-
+    // Service worker (safe for GitHub Pages)
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("/odd-only/sw.js");
