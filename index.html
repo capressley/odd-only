@@ -6,73 +6,71 @@
 <title>Odd-Only Arcade</title>
 
 <style>
-body{
-  margin:0;
-  font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  background:#0b0b0d;
-  color:#fff;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  min-height:100vh;
-}
-
-.hidden{display:none}
-
-.card{
-  width:min(520px,92vw);
-  background:#121217;
-  border-radius:18px;
-  padding:18px;
-  box-shadow:0 20px 50px rgba(0,0,0,.6);
-  text-align:center;
-}
-
-img{
-  width:100%;
-  border-radius:14px;
-  margin-bottom:12px;
-}
-
-h1{margin:10px 0}
-p{color:#bdbdd1; line-height:1.4}
-
-button{
-  width:100%;
-  margin-top:12px;
-  padding:16px;
-  font-size:20px;
-  font-weight:800;
-  border:none;
-  border-radius:14px;
-  cursor:pointer;
-  background:#57c66b;
-  color:#0b0b0d;
-}
-
-.secondary{
-  background:#2a2a35;
-  color:#fff;
-}
-
-.hud{
-  display:flex;
-  justify-content:space-between;
-  margin-bottom:12px;
-  font-weight:700;
-}
-
-#number{
-  font-size:88px;
-  font-weight:900;
-  margin:20px 0;
-}
-
-.toast{
-  min-height:18px;
-  color:#bdbdd1;
-  font-size:14px;
-}
+  body{
+    margin:0;
+    font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    background:#0b0b0d;
+    color:#fff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+    padding:16px;
+  }
+  .hidden{display:none}
+  .card{
+    width:min(520px,92vw);
+    background:#121217;
+    border-radius:18px;
+    padding:18px;
+    box-shadow:0 20px 50px rgba(0,0,0,.6);
+    text-align:center;
+  }
+  img{
+    width:100%;
+    border-radius:14px;
+    margin-bottom:12px;
+    border:1px solid rgba(255,255,255,.10);
+    background:#000;
+  }
+  h1{margin:10px 0}
+  p{color:#bdbdd1; line-height:1.4}
+  button{
+    width:100%;
+    margin-top:12px;
+    padding:16px;
+    font-size:20px;
+    font-weight:800;
+    border:none;
+    border-radius:14px;
+    cursor:pointer;
+    background:#57c66b;
+    color:#0b0b0d;
+  }
+  .secondary{
+    background:#2a2a35;
+    color:#fff;
+  }
+  .hud{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:12px;
+    font-weight:800;
+    flex-wrap:wrap;
+  }
+  #number{
+    font-size:88px;
+    font-weight:900;
+    margin:18px 0 8px;
+    user-select:none;
+  }
+  .toast{
+    min-height:20px;
+    color:#bdbdd1;
+    font-size:14px;
+    margin-top:10px;
+  }
 </style>
 </head>
 
@@ -84,9 +82,10 @@ button{
   <h1>Odd-Only Arcade</h1>
   <p>
     Tap ONLY when the number is odd.<br>
-    +1 for odd taps.<br>
-    −1 for even taps.<br>
-    Three strikes and you’re out.
+    <b>+1</b> for correct odd tap.<br>
+    <b>-1</b> if an odd number disappears untapped.<br>
+    Tap even = <b>-1</b> and a strike.<br>
+    3 strikes and you’re out.
   </p>
   <button id="startBtn">START</button>
 </div>
@@ -101,7 +100,6 @@ button{
   <div id="number">—</div>
 
   <button id="tapBtn">Tap ONLY if odd</button>
-  <button id="shareBtn" class="secondary">Share score</button>
   <div id="gameMsg" class="toast"></div>
 </div>
 
@@ -110,105 +108,169 @@ button{
   <img src="welcome.png" alt="Odd-Only Arcade">
   <h1>Game Over</h1>
   <p>Final score: <b id="finalScore">0</b></p>
+
+  <button id="shareFinalBtn" class="secondary">Share score</button>
   <button id="againBtn">Play Again</button>
+  <div id="overMsg" class="toast"></div>
 </div>
 
 <script>
-/* ---------- ELEMENTS ---------- */
-const welcome = document.getElementById("welcome");
-const game = document.getElementById("game");
-const over = document.getElementById("over");
+  // ---------- ELEMENTS ----------
+  const welcome = document.getElementById("welcome");
+  const game = document.getElementById("game");
+  const over = document.getElementById("over");
 
-const startBtn = document.getElementById("startBtn");
-const tapBtn = document.getElementById("tapBtn");
-const shareBtn = document.getElementById("shareBtn");
-const againBtn = document.getElementById("againBtn");
+  const startBtn = document.getElementById("startBtn");
+  const tapBtn = document.getElementById("tapBtn");
+  const againBtn = document.getElementById("againBtn");
+  const shareFinalBtn = document.getElementById("shareFinalBtn");
 
-const numberEl = document.getElementById("number");
-const scoreEl = document.getElementById("score");
-const strikesEl = document.getElementById("strikes");
-const finalScoreEl = document.getElementById("finalScore");
-const msgEl = document.getElementById("gameMsg");
+  const numberEl = document.getElementById("number");
+  const scoreEl = document.getElementById("score");
+  const strikesEl = document.getElementById("strikes");
+  const finalScoreEl = document.getElementById("finalScore");
 
-/* ---------- STATE ---------- */
-let score = 0;
-let strikes = 0;
-let current = null;
-let timer = null;
-let running = false;
+  const gameMsg = document.getElementById("gameMsg");
+  const overMsg = document.getElementById("overMsg");
 
-/* ---------- SPEED CONTROL (EDIT THIS) ---------- */
-function nextDelayMs(){
-  const base = 950;                 // ← increase to slow down
-  const jitter = Math.random() * 400 - 200;
-  return Math.max(600, base + jitter);
-}
+  // ---------- STATE ----------
+  let score = 0;
+  let strikes = 0;
+  let current = null;
+  let timer = null;
+  let running = false;
 
-/* ---------- GAME LOOP ---------- */
-function nextNumber(){
-  current = Math.floor(Math.random() * 999) + 1;
-  numberEl.textContent = current;
-}
+  // Tracks whether the CURRENT displayed odd number was tapped before it disappeared
+  let currentOddWasTapped = false;
 
-function tick(){
-  if(!running) return;
-  nextNumber();
-  timer = setTimeout(tick, nextDelayMs());
-}
+  // Prevent multiple taps scoring on the same number
+  let tappedThisNumber = false;
 
-function startGame(){
-  score = 0;
-  strikes = 0;
-  scoreEl.textContent = 0;
-  strikesEl.textContent = 0;
-  msgEl.textContent = "";
-  running = true;
-
-  welcome.classList.add("hidden");
-  over.classList.add("hidden");
-  game.classList.remove("hidden");
-
-  tick();
-}
-
-function endGame(){
-  running = false;
-  clearTimeout(timer);
-  finalScoreEl.textContent = score;
-
-  game.classList.add("hidden");
-  over.classList.remove("hidden");
-}
-
-/* ---------- INPUT ---------- */
-tapBtn.onclick = () => {
-  if(!running || current === null) return;
-
-  if(current % 2 === 1){
-    score++;
-    msgEl.textContent = "Good.";
-  } else {
-    score--;
-    strikes++;
-    msgEl.textContent = `Strike ${strikes}/3`;
-    strikesEl.textContent = strikes;
-    if(strikes >= 3) endGame();
+  // ---------- SPEED CONTROL ----------
+  function nextDelayMs(){
+    const base = 950; // increase to slow down
+    const jitter = (Math.random() * 400) - 200; // erratic cadence
+    return Math.max(600, base + jitter);
   }
-  scoreEl.textContent = score;
-};
 
-shareBtn.onclick = () => {
-  const text = `Odd-Only Arcade — I scored ${score}. Can you beat it? ${location.href}`;
-  if(navigator.share){
-    navigator.share({title:"Odd-Only Arcade", text});
-  } else {
-    navigator.clipboard.writeText(text);
-    msgEl.textContent = "Score copied.";
+  function randInt(min, max){
+    return Math.floor(Math.random() * (max - min + 1)) + min;
   }
-};
 
-startBtn.onclick = startGame;
-againBtn.onclick = () => location.reload();
+  function updateHUD(){
+    scoreEl.textContent = String(score);
+    strikesEl.textContent = String(strikes);
+  }
+
+  // ---------- GAME LOOP ----------
+  function showNextNumber(){
+    // Before changing the number, apply "missed odd" penalty for the previous number:
+    if (current !== null && (current % 2 === 1) && !currentOddWasTapped) {
+      score -= 1;
+      gameMsg.textContent = "Missed odd: -1";
+      updateHUD();
+    }
+
+    current = randInt(1, 999);
+    numberEl.textContent = String(current);
+
+    // Reset per-number flags
+    currentOddWasTapped = false;
+    tappedThisNumber = false;
+  }
+
+  function tick(){
+    if (!running) return;
+    showNextNumber();
+    timer = setTimeout(tick, nextDelayMs());
+  }
+
+  function startGame(){
+    score = 0;
+    strikes = 0;
+    current = null;
+    currentOddWasTapped = false;
+    tappedThisNumber = false;
+
+    updateHUD();
+    gameMsg.textContent = "";
+    overMsg.textContent = "";
+
+    running = true;
+    clearTimeout(timer);
+
+    welcome.classList.add("hidden");
+    over.classList.add("hidden");
+    game.classList.remove("hidden");
+
+    tick();
+  }
+
+  function endGame(){
+    running = false;
+    clearTimeout(timer);
+
+    // If the game ends while an odd is showing and it wasn't tapped yet, count it as missed:
+    if (current !== null && (current % 2 === 1) && !currentOddWasTapped) {
+      score -= 1;
+    }
+
+    finalScoreEl.textContent = String(score);
+
+    game.classList.add("hidden");
+    over.classList.remove("hidden");
+  }
+
+  // ---------- INPUT ----------
+  tapBtn.onclick = () => {
+    if (!running || current === null) return;
+
+    // Only allow one scoring action per displayed number
+    if (tappedThisNumber) return;
+    tappedThisNumber = true;
+
+    if (current % 2 === 1) {
+      score += 1;
+      currentOddWasTapped = true;
+      gameMsg.textContent = "Good: +1";
+      updateHUD();
+    } else {
+      score -= 1;
+      strikes += 1;
+      gameMsg.textContent = `Even tap: -1 (Strike ${strikes}/3)`;
+      updateHUD();
+      if (strikes >= 3) endGame();
+    }
+  };
+
+  shareFinalBtn.onclick = async () => {
+    const url = location.href;
+    const text = `Odd-Only Arcade — I scored ${score}. Can you beat it? ${url}`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Odd-Only Arcade", text, url });
+        overMsg.textContent = "Shared!";
+        return;
+      }
+    } catch {
+      // fall through to clipboard
+    }
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        overMsg.textContent = "Copied share text!";
+      } else {
+        overMsg.textContent = text;
+      }
+    } catch {
+      overMsg.textContent = text;
+    }
+  };
+
+  startBtn.onclick = startGame;
+  againBtn.onclick = () => location.reload();
 </script>
 
 </body>
