@@ -1,306 +1,161 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Odd-Only Arcade</title>
 
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#111111" />
-
   <style>
-    :root {
-      --bg: #0b0b0b;
-      --fg: #ffffff;
-      --muted: rgba(255,255,255,0.75);
-      --green: #4bd167;
-      --card: rgba(0,0,0,0.55);
-      --shadow: 0 18px 60px rgba(0,0,0,0.55);
-      --radius: 18px;
-    }
-
-    html, body {
-      height: 100%;
+    body {
       margin: 0;
-      background: var(--bg);
-      color: var(--fg);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: #000;
+      color: #fff;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      text-align: center;
     }
 
     .screen {
-      min-height: 100vh;
       display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
+      min-height: 100vh;
+      padding: 20px;
       box-sizing: border-box;
-    }
-    .screen.active { display: flex; }
-
-    .panel {
-      width: min(520px, 92vw);
-      background: var(--card);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.10);
-      backdrop-filter: blur(6px);
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
     }
 
-    .hero {
-      width: 100%;
-      display: block;
-      max-height: 52vh;
-      object-fit: cover;
-      background: #000;
+    .active {
+      display: flex;
     }
 
-    .content {
-      padding: 18px 18px 22px;
-      text-align: center;
+    img {
+      max-width: 90%;
+      height: auto;
+      margin-bottom: 20px;
     }
 
     h1 {
-      margin: 0 0 10px;
-      font-size: 1.35rem;
-      letter-spacing: 0.4px;
-    }
-    .howto {
-      margin: 0 0 16px;
-      color: var(--muted);
-      line-height: 1.35;
-      font-size: 1.02rem;
+      margin: 10px 0;
     }
 
-    .btn {
-      display: inline-block;
-      font-size: 1.25rem;
-      font-weight: 800;
-      padding: 14px 26px;
-      border-radius: 14px;
+    button {
+      padding: 16px 28px;
+      font-size: 20px;
       border: none;
+      border-radius: 12px;
+      background: #66cc66;
+      color: #000;
       cursor: pointer;
-      background: var(--green);
-      color: #0b0b0b;
-      box-shadow: 0 10px 22px rgba(75,209,103,0.28);
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .btn:active { transform: translateY(1px); }
-
-    /* Game screen */
-    .gameWrap {
-      width: min(520px, 92vw);
-      text-align: center;
-    }
-
-    .hud {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-      padding: 10px 12px;
-      border-radius: 14px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.10);
-    }
-    .hud .label {
-      color: var(--muted);
-      font-weight: 700;
-      letter-spacing: 0.3px;
-    }
-    .hud .value {
-      font-weight: 900;
-      font-size: 1.2rem;
     }
 
     #number {
-      font-size: 5.2rem;
-      font-weight: 900;
-      letter-spacing: 1px;
-      margin: 18px 0 18px;
-      text-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      font-size: 80px;
+      margin: 20px 0;
     }
 
-    #tapBtn {
-      width: 100%;
-      font-size: 1.6rem;
-      padding: 18px 22px;
-      border-radius: 16px;
-      background: var(--green);
-      color: #0b0b0b;
-      border: none;
-      font-weight: 900;
-      box-shadow: 0 14px 30px rgba(75,209,103,0.22);
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .small {
-      margin-top: 10px;
-      color: var(--muted);
-      font-size: 0.98rem;
-    }
-
-    /* End screen */
-    .endScore {
-      font-size: 1.25rem;
-      font-weight: 900;
-      margin: 6px 0 14px;
+    #score {
+      font-size: 24px;
+      margin-bottom: 20px;
     }
   </style>
 </head>
-
 <body>
-  <!-- WELCOME -->
+
+  <!-- WELCOME SCREEN -->
   <div id="welcome" class="screen active">
-    <div class="panel">
-      <img class="hero" src="welcome.png" alt="Odd-Only Arcade" onerror="this.style.display='none';" />
-      <div class="content">
-        <h1>Odd-Only Arcade</h1>
-        <p class="howto">
-          <b>How to play:</b><br/>
-          Tap the button <b>ONLY</b> when the number is <b>odd</b>.<br/>
-          Tap on an <b>even</b> number and the game ends.
-        </p>
-        <button id="startBtn" class="btn">START</button>
-      </div>
-    </div>
+    <img src="welcome.png" alt="Odd-Only Arcade">
+    <h1>Odd-Only Arcade</h1>
+    <p>
+      Tap the button ONLY when the number is odd.<br>
+      Miss an odd number: −1 point.<br>
+      Tap on even: game over.
+    </p>
+    <button id="startBtn">START</button>
   </div>
 
-  <!-- GAME -->
+  <!-- GAME SCREEN -->
   <div id="game" class="screen">
-    <div class="gameWrap">
-      <div class="hud">
-        <div>
-          <div class="label">SCORE</div>
-          <div id="score" class="value">0</div>
-        </div>
-        <div style="text-align:right">
-          <div class="label">RANGE</div>
-          <div class="value">1–999</div>
-        </div>
-      </div>
-
-      <div id="number">7</div>
-
-      <button id="tapBtn">Tap ONLY if odd</button>
-      <div class="small">Numbers change continuously — stay sharp.</div>
-    </div>
+    <div id="score">Score: 0</div>
+    <div id="number">0</div>
+    <button id="tapBtn">Tap ONLY if odd</button>
   </div>
 
-  <!-- END -->
+  <!-- END SCREEN -->
   <div id="end" class="screen">
-    <div class="panel">
-      <img class="hero" src="welcome.png" alt="Odd-Only Arcade" onerror="this.style.display='none';" />
-      <div class="content">
-        <h1>Game Over</h1>
-        <div class="endScore">Final score: <span id="finalScore">0</span></div>
-        <button id="againBtn" class="btn">PLAY AGAIN</button>
-      </div>
-    </div>
+    <img src="welcome.png" alt="Game Over">
+    <h1>Game Over</h1>
+    <p id="finalScore"></p>
+    <button id="againBtn">Play Again</button>
   </div>
 
   <script>
-    // --- Elements ---
-    const welcomeScreen = document.getElementById("welcome");
-    const gameScreen    = document.getElementById("game");
-    const endScreen     = document.getElementById("end");
+    const welcome = document.getElementById("welcome");
+    const game = document.getElementById("game");
+    const end = document.getElementById("end");
 
-    const startBtn  = document.getElementById("startBtn");
-    const againBtn  = document.getElementById("againBtn");
-    const tapBtn    = document.getElementById("tapBtn");
+    const startBtn = document.getElementById("startBtn");
+    const againBtn = document.getElementById("againBtn");
+    const tapBtn = document.getElementById("tapBtn");
 
-    const numberEl  = document.getElementById("number");
-    const scoreEl   = document.getElementById("score");
-    const finalEl   = document.getElementById("finalScore");
+    const numberEl = document.getElementById("number");
+    const scoreEl = document.getElementById("score");
+    const finalScoreEl = document.getElementById("finalScore");
 
-    // --- Game state ---
+    let currentNumber = 0;
     let score = 0;
-    let current = 7;
-    let running = false;
-    let timerId = null;
-
-    // Speed settings: steady, slightly erratic (no ramping)
-    const BASE_MS = 520;          // overall pace (adjust slower/faster)
-    const JITTER_MS = 240;        // randomness around pace
+    let timer = null;
+    let awaitingOdd = false;
 
     function show(screen) {
-      welcomeScreen.classList.remove("active");
-      gameScreen.classList.remove("active");
-      endScreen.classList.remove("active");
+      [welcome, game, end].forEach(s => s.classList.remove("active"));
       screen.classList.add("active");
     }
 
-    function randInt(min, max) {
-      return Math.floor(Math.random() * (max - min + 1)) + min;
+    function randomDelay() {
+      return 700 + Math.random() * 600; // slow, erratic
     }
 
-    function nextDelay() {
-      // Erratic but controlled (no speeding up over time)
-      return Math.max(120, BASE_MS + randInt(-JITTER_MS, JITTER_MS));
-    }
+    function nextNumber() {
+      if (awaitingOdd && currentNumber % 2 === 1) {
+        score--;
+        scoreEl.textContent = "Score: " + score;
+      }
 
-    function setNewNumber() {
-      current = randInt(1, 999);
-      numberEl.textContent = String(current);
-    }
+      currentNumber = Math.floor(Math.random() * 999) + 1;
+      numberEl.textContent = currentNumber;
+      awaitingOdd = currentNumber % 2 === 1;
 
-    function loop() {
-      if (!running) return;
-      setNewNumber();
-      timerId = setTimeout(loop, nextDelay());
+      timer = setTimeout(nextNumber, randomDelay());
     }
 
     function startGame() {
-      // Clear any old timers
-      if (timerId) clearTimeout(timerId);
-      timerId = null;
-
       score = 0;
-      scoreEl.textContent = "0";
-      running = true;
-
-      setNewNumber();
-      show(gameScreen);
-      loop();
+      scoreEl.textContent = "Score: 0";
+      show(game);
+      clearTimeout(timer);
+      awaitingOdd = false;
+      nextNumber();
     }
 
     function endGame() {
-      running = false;
-      if (timerId) clearTimeout(timerId);
-      timerId = null;
-
-      finalEl.textContent = String(score);
-      show(endScreen);
+      clearTimeout(timer);
+      finalScoreEl.textContent = "Final Score: " + score;
+      show(end);
     }
 
-    // Tap logic:
-    // Tap ONLY if odd -> score +1
-    // If even tapped -> end game
-    tapBtn.addEventListener("click", () => {
-      if (!running) return;
-
-      if (current % 2 === 1) {
-        score += 1;
-        scoreEl.textContent = String(score);
-        // optional: immediate new number after correct tap
-        setNewNumber();
+    tapBtn.onclick = () => {
+      if (currentNumber % 2 === 1) {
+        score++;
+        scoreEl.textContent = "Score: " + score;
+        awaitingOdd = false;
       } else {
         endGame();
       }
-    });
+    };
 
-    startBtn.addEventListener("click", startGame);
-    againBtn.addEventListener("click", startGame);
-
-    // Register SW safely (won't break game if it fails)
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("sw.js").catch(() => {});
-      });
-    }
+    startBtn.onclick = startGame;
+    againBtn.onclick = startGame;
   </script>
+
 </body>
 </html>
