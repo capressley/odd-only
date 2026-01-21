@@ -25,6 +25,8 @@
     padding:18px;
     box-shadow:0 20px 50px rgba(0,0,0,.6);
     text-align:center;
+    position:relative;
+    overflow:hidden;
   }
   img{
     width:100%;
@@ -71,6 +73,31 @@
     font-size:14px;
     margin-top:10px;
   }
+
+  /* Flash overlay for strike removal */
+  #flash{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(0,0,0,.72);
+    font-weight:1000;
+    font-size:34px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    opacity:0;
+    pointer-events:none;
+  }
+  #flash.show{
+    animation: flashPop 900ms ease-in-out forwards;
+  }
+  @keyframes flashPop{
+    0%   { opacity:0; transform:scale(.95); }
+    15%  { opacity:1; transform:scale(1.02); }
+    60%  { opacity:1; transform:scale(1.00); }
+    100% { opacity:0; transform:scale(.98); }
+  }
 </style>
 </head>
 
@@ -81,11 +108,13 @@
   <img src="welcome.png" alt="Odd-Only Arcade">
   <h1>Odd-Only Arcade</h1>
   <p>
-    Tap ONLY when the number is odd.<br>
-    <b>+1</b> for correct odd tap.<br>
-    <b>-1</b> if an odd number disappears untapped.<br>
-    Tap even = <b>-1</b> and a strike.<br>
-    3 strikes and you’re out.
+    Numbers (1–999) flash at an erratic cadence.<br><br>
+    <b>Tap ONLY when the number is odd.</b><br>
+    • Tap odd: <b>+1 point</b><br>
+    • Tap even: <b>-1 point</b> + <b>1 strike</b><br>
+    • <b>Miss an odd</b> (it disappears untapped): <b>-1 point</b> + <b>1 strike</b><br><br>
+    <b>3 strikes</b> and you’re out.<br>
+    Every <b>10</b> successfully tapped odds removes <b>1 strike</b> (min 0).
   </p>
   <button id="startBtn">START</button>
 </div>
@@ -95,12 +124,15 @@
   <div class="hud">
     <div>Score: <span id="score">0</span></div>
     <div>Strikes: <span id="strikes">0</span>/3</div>
+    <div>Odd taps: <span id="oddCount">0</span>/10</div>
   </div>
 
   <div id="number">—</div>
 
   <button id="tapBtn">Tap ONLY if odd</button>
   <div id="gameMsg" class="toast"></div>
+
+  <div id="flash">Strike removed!</div>
 </div>
 
 <!-- GAME OVER -->
@@ -128,28 +160,35 @@
   const numberEl = document.getElementById("number");
   const scoreEl = document.getElementById("score");
   const strikesEl = document.getElementById("strikes");
+  const oddCountEl = document.getElementById("oddCount");
   const finalScoreEl = document.getElementById("finalScore");
 
   const gameMsg = document.getElementById("gameMsg");
   const overMsg = document.getElementById("overMsg");
+  const flashEl = document.getElementById("flash");
 
   // ---------- STATE ----------
   let score = 0;
   let strikes = 0;
   let current = null;
+
   let timer = null;
   let running = false;
+  let paused = false;
 
-  // Tracks whether the CURRENT displayed odd number was tapped before it disappeared
+  // For "missed odd" logic
   let currentOddWasTapped = false;
 
-  // Prevent multiple taps scoring on the same number
+  // Prevent multiple scoring taps per shown number
   let tappedThisNumber = false;
+
+  // Count successful odd taps toward strike removal
+  let successfulOddTaps = 0; // 0..10
 
   // ---------- SPEED CONTROL ----------
   function nextDelayMs(){
     const base = 950; // increase to slow down
-    const jitter = (Math.random() * 400) - 200; // erratic cadence
+    const jitter = (Math.random() * 400) - 200;
     return Math.max(600, base + jitter);
   }
 
@@ -160,16 +199,52 @@
   function updateHUD(){
     scoreEl.textContent = String(score);
     strikesEl.textContent = String(strikes);
+    oddCountEl.textContent = String(successfulOddTaps);
+  }
+
+  function stopTimer(){
+    clearTimeout(timer);
+    timer = null;
+  }
+
+  function pauseWithFlash(message){
+    paused = true;
+    stopTimer();
+
+    flashEl.textContent = message;
+    flashEl.classList.remove("show");
+    // force reflow so animation restarts reliably
+    void flashEl.offsetWidth;
+    flashEl.classList.add("show");
+
+    setTimeout(() => {
+      flashEl.classList.remove("show");
+      paused = false;
+      if (running) tick();
+    }, 900);
   }
 
   // ---------- GAME LOOP ----------
-  function showNextNumber(){
-    // Before changing the number, apply "missed odd" penalty for the previous number:
-    if (current !== null && (current % 2 === 1) && !currentOddWasTapped) {
+  function applyMissedOddPenaltyIfNeeded(){
+    // If previous number was odd and it wasn't tapped before disappearing:
+    if (current !== null && (current % 2 === 1) && !currentOddWasTapped){
       score -= 1;
-      gameMsg.textContent = "Missed odd: -1";
+      strikes += 1;
+      gameMsg.textContent = "Missed odd: -1 and +1 strike";
       updateHUD();
+
+      if (strikes >= 3){
+        endGame();
+        return true; // game ended
+      }
     }
+    return false;
+  }
+
+  function showNextNumber(){
+    // Resolve the previous number outcome before changing it
+    const ended = applyMissedOddPenaltyIfNeeded();
+    if (ended) return;
 
     current = randInt(1, 999);
     numberEl.textContent = String(current);
@@ -180,8 +255,9 @@
   }
 
   function tick(){
-    if (!running) return;
+    if (!running || paused) return;
     showNextNumber();
+    if (!running || paused) return;
     timer = setTimeout(tick, nextDelayMs());
   }
 
@@ -191,13 +267,15 @@
     current = null;
     currentOddWasTapped = false;
     tappedThisNumber = false;
+    successfulOddTaps = 0;
 
     updateHUD();
     gameMsg.textContent = "";
     overMsg.textContent = "";
 
     running = true;
-    clearTimeout(timer);
+    paused = false;
+    stopTimer();
 
     welcome.classList.add("hidden");
     over.classList.add("hidden");
@@ -207,12 +285,17 @@
   }
 
   function endGame(){
-    running = false;
-    clearTimeout(timer);
+    if (!running) return;
 
-    // If the game ends while an odd is showing and it wasn't tapped yet, count it as missed:
-    if (current !== null && (current % 2 === 1) && !currentOddWasTapped) {
+    running = false;
+    paused = false;
+    stopTimer();
+
+    // If the game ends while an odd is showing and it wasn't tapped, count it as missed:
+    // (This keeps the rule consistent even if game ends mid-cycle.)
+    if (current !== null && (current % 2 === 1) && !currentOddWasTapped){
       score -= 1;
+      strikes = Math.min(3, strikes + 1);
     }
 
     finalScoreEl.textContent = String(score);
@@ -223,22 +306,44 @@
 
   // ---------- INPUT ----------
   tapBtn.onclick = () => {
-    if (!running || current === null) return;
+    if (!running || paused || current === null) return;
 
-    // Only allow one scoring action per displayed number
     if (tappedThisNumber) return;
     tappedThisNumber = true;
 
-    if (current % 2 === 1) {
+    if (current % 2 === 1){
+      // Successful odd tap
       score += 1;
       currentOddWasTapped = true;
-      gameMsg.textContent = "Good: +1";
+
+      successfulOddTaps = Math.min(10, successfulOddTaps + 1);
+
+      // If we've hit 10 successful odd taps, remove a strike (if any)
+      if (successfulOddTaps >= 10){
+        successfulOddTaps = 0;
+
+        if (strikes > 0){
+          strikes -= 1;
+          gameMsg.textContent = "10 odds! Strike removed.";
+          updateHUD();
+          pauseWithFlash("Strike removed!");
+          return;
+        } else {
+          gameMsg.textContent = "10 odds! (No strikes to remove.)";
+        }
+      } else {
+        gameMsg.textContent = "Good: +1";
+      }
+
       updateHUD();
     } else {
+      // Even tap
       score -= 1;
       strikes += 1;
-      gameMsg.textContent = `Even tap: -1 (Strike ${strikes}/3)`;
+
+      gameMsg.textContent = `Even tap: -1 and +1 strike (${strikes}/3)`;
       updateHUD();
+
       if (strikes >= 3) endGame();
     }
   };
@@ -247,24 +352,24 @@
     const url = location.href;
     const text = `Odd-Only Arcade — I scored ${score}. Can you beat it? ${url}`;
 
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: "Odd-Only Arcade", text, url });
+    try{
+      if (navigator.share){
+        await navigator.share({ title:"Odd-Only Arcade", text, url });
         overMsg.textContent = "Shared!";
         return;
       }
-    } catch {
-      // fall through to clipboard
+    }catch{
+      // fall through
     }
 
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
+    try{
+      if (navigator.clipboard && navigator.clipboard.writeText){
         await navigator.clipboard.writeText(text);
         overMsg.textContent = "Copied share text!";
       } else {
         overMsg.textContent = text;
       }
-    } catch {
+    }catch{
       overMsg.textContent = text;
     }
   };
