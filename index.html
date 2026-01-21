@@ -319,6 +319,9 @@
     // Game state
     // -----------------------------
     let running = false;
+    let paused = false;  // NEW: real pause state (overlay, etc.)
+    let gen = 0;         // NEW: generation token to ignore stale timers
+
     let current = 0;
     let score = 0;
 
@@ -359,8 +362,12 @@
       if (!motivationEnabled) return;
 
       const nextInMs = randInt(31, 49) * 1000;
+      const myGen = gen;
+
       motivationTimer = setTimeout(() => {
         if (!motivationEnabled) return;
+        if (!running || paused) { scheduleMotivationPopup(); return; }
+        if (myGen !== gen) return;
 
         motivationEl.style.display = "block";
 
@@ -387,16 +394,25 @@
     }
 
     // -----------------------------
-    // Overlay helpers
+    // Overlay helpers (NOW ACTUALLY PAUSES)
     // -----------------------------
     function showOverlay(title, text, durationMs = 900){
+      paused = true;
+      clearTimeout(tickTimer);
+
       overlayTitle.textContent = title;
       overlayText.textContent = text;
       overlay.style.display = "flex";
-      // pause gameplay timing while overlay is visible
+
+      const myGen = gen;
+
       return new Promise((resolve) => {
         setTimeout(() => {
+          // if game ended/restarted while overlay was up, just exit quietly
+          if (myGen !== gen) { overlay.style.display = "none"; resolve(); return; }
+
           overlay.style.display = "none";
+          paused = false;
           resolve();
         }, durationMs);
       });
@@ -439,16 +455,20 @@
     }
 
     function scheduleNextTick(){
-      if (!running) return;
+      if (!running || paused) return;
 
       const delay = randInt(TICK_MIN_MS, TICK_MAX_MS);
+      const myGen = gen;
+
       tickTimer = setTimeout(() => {
+        if (!running || paused) return;
+        if (myGen !== gen) return; // stale timer; ignore
         tick();
       }, delay);
     }
 
     async function tick(){
-      if (!running) return;
+      if (!running || paused) return;
 
       // If the previous number was odd and it changed without being tapped:
       // -1 score and +1 strike, streak reset
@@ -480,7 +500,6 @@
       // Every 10 correct odd taps: remove 1 strike (min 0), pause + message
       if (correctOddCount % 10 === 0) {
         if (strikes > 0) {
-          // pause timers briefly
           clearTimeout(tickTimer);
 
           strikes = Math.max(0, strikes - 1);
@@ -488,7 +507,7 @@
 
           await showOverlay("STRIKE REMOVED!", "Nice run — one strike has been removed.", 1000);
 
-          // resume cadence
+          // resume cadence safely (only once)
           scheduleNextTick();
         }
       }
@@ -505,7 +524,6 @@
       if (strikes >= MAX_STRIKES) {
         endGame();
       } else {
-        // small feedback pause
         clearTimeout(tickTimer);
         await showOverlay("STRIKE!", "That was even. Focus up.", 700);
         scheduleNextTick();
@@ -513,7 +531,10 @@
     }
 
     function startGame(){
-      // reset state
+      // NEW: bump generation to invalidate stale timers
+      gen++;
+      paused = false;
+
       running = true;
       score = 0;
       strikes = 0;
@@ -524,7 +545,6 @@
       showGame();
       updateHUD();
 
-      // start motivation popups + game cadence
       startMotivationPopups();
 
       clearTimeout(tickTimer);
@@ -534,16 +554,17 @@
     }
 
     function endGame(){
+      // NEW: bump generation to invalidate any in-flight timers/overlays
+      gen++;
+      paused = false;
+
       running = false;
 
       stopMotivationPopups();
       clearTimeout(tickTimer);
       awaitingOddTap = false;
 
-      // Show welcome/end screen again
       showWelcome();
-
-      // enable share button now that game ended
       shareBtn.style.display = "block";
     }
 
@@ -557,15 +578,12 @@
           await navigator.share({ title: "Odd-Only Arcade", text });
           return;
         }
-      } catch (e) {
-        // fall through to clipboard
-      }
+      } catch (e) {}
 
       try {
         await navigator.clipboard.writeText(text);
         alert("Score copied to clipboard — paste into a text!");
       } catch (e) {
-        // last resort
         prompt("Copy your score:", text);
       }
     }
@@ -578,10 +596,11 @@
     });
 
     tapBtn.addEventListener("click", async () => {
-      if (!running) return;
+      if (!running || paused) return;
 
       if (current % 2 !== 0) {
         await handleCorrectOddTap();
+
         // Immediately move to next number so taps feel responsive
         clearTimeout(tickTimer);
         newNumber();
@@ -602,7 +621,6 @@
     });
 
     motivationEl.addEventListener("error", () => {
-      // If doinggreat.png fails, silently disable popups so it doesn't break gameplay
       stopMotivationPopups();
     });
 
