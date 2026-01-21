@@ -1,54 +1,68 @@
 /* sw.js - Odd-Only Arcade (GitHub Pages friendly)
    If you change files and want to force-update caches, bump VERSION.
 */
-const VERSION = "v7"; // <-- bump this anytime you update assets/code
+const VERSION = "v8"; // bump this anytime you update assets/code
 const CACHE_NAME = `odd-only-arcade-${VERSION}`;
 
+// Add any icon files referenced in manifest.webmanifest if you have them.
 const ASSETS = [
-  "./",               // GitHub Pages may serve index.html for folder
+  "./",
   "./index.html",
   "./manifest.webmanifest",
   "./welcome.png",
-  "./doinggreat.png"
+  "./doinggreat.png",
+  "./sw.js"
 ];
 
-// Install: pre-cache core assets
+// Install: pre-cache core assets (resilient to missing files)
 self.addEventListener("install", (event) => {
   self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
-  );
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+
+    // Cache what we can; don't fail the whole SW if one asset is missing.
+    const results = await Promise.allSettled(
+      ASSETS.map((path) => cache.add(path))
+    );
+
+    // Optional: log missing assets during development
+    // results.forEach((r, i) => {
+    //   if (r.status === "rejected") console.warn("SW precache failed:", ASSETS[i], r.reason);
+    // });
+  })());
 });
 
 // Activate: clean up old caches
 self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    (async () => {
-      const keys = await caches.keys();
-      await Promise.all(
-        keys
-          .filter((k) => k.startsWith("odd-only-arcade-") && k !== CACHE_NAME)
-          .map((k) => caches.delete(k))
-      );
-      await self.clients.claim();
-    })()
-  );
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(
+      keys
+        .filter((k) => k.startsWith("odd-only-arcade-") && k !== CACHE_NAME)
+        .map((k) => caches.delete(k))
+    );
+    await self.clients.claim();
+  })());
 });
 
 // Fetch strategy:
-// - HTML (navigate): network-first (so updates show quickly), fallback to cache
-// - Images: cache-first (fast), fallback to network
+// - HTML (navigate): network-first, fallback to cached index.html
+// - Images: cache-first
 // - Everything else: stale-while-revalidate
 self.addEventListener("fetch", (event) => {
   const req = event.request;
+
+  // Only handle GET
+  if (req.method !== "GET") return;
+
   const url = new URL(req.url);
 
   // Only handle same-origin requests
   if (url.origin !== self.location.origin) return;
 
-  // HTML navigations: network-first
-  if (req.mode === "navigate" || (req.destination === "document")) {
-    event.respondWith(networkFirst(req));
+  // HTML navigations: network-first (keeps updates fresh)
+  if (req.mode === "navigate" || req.destination === "document") {
+    event.respondWith(networkFirstHTML(req));
     return;
   }
 
@@ -62,15 +76,21 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(staleWhileRevalidate(req));
 });
 
-async function networkFirst(request) {
+async function networkFirstHTML(request) {
   const cache = await caches.open(CACHE_NAME);
   try {
     const fresh = await fetch(request, { cache: "no-store" });
+    // Cache a copy keyed to the actual request URL
     cache.put(request, fresh.clone());
     return fresh;
   } catch (err) {
+    // Try exact match first
     const cached = await cache.match(request);
-    return cached || new Response("Offline", { status: 503 });
+    if (cached) return cached;
+
+    // GitHub Pages: fallback to cached index.html for folder navigations
+    const fallback = await cache.match("./index.html");
+    return fallback || new Response("Offline", { status: 503 });
   }
 }
 
