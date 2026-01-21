@@ -1,382 +1,622 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Odd-Only Arcade</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Odd-Only Arcade</title>
 
-<style>
-  body{
-    margin:0;
-    font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-    background:#0b0b0d;
-    color:#fff;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    min-height:100vh;
-    padding:16px;
-  }
-  .hidden{display:none}
-  .card{
-    width:min(520px,92vw);
-    background:#121217;
-    border-radius:18px;
-    padding:18px;
-    box-shadow:0 20px 50px rgba(0,0,0,.6);
-    text-align:center;
-    position:relative;
-    overflow:hidden;
-  }
-  img{
-    width:100%;
-    border-radius:14px;
-    margin-bottom:12px;
-    border:1px solid rgba(255,255,255,.10);
-    background:#000;
-  }
-  h1{margin:10px 0}
-  p{color:#bdbdd1; line-height:1.4}
-  button{
-    width:100%;
-    margin-top:12px;
-    padding:16px;
-    font-size:20px;
-    font-weight:800;
-    border:none;
-    border-radius:14px;
-    cursor:pointer;
-    background:#57c66b;
-    color:#0b0b0d;
-  }
-  .secondary{
-    background:#2a2a35;
-    color:#fff;
-  }
-  .hud{
-    display:flex;
-    justify-content:space-between;
-    gap:10px;
-    margin-bottom:12px;
-    font-weight:800;
-    flex-wrap:wrap;
-  }
-  #number{
-    font-size:88px;
-    font-weight:900;
-    margin:18px 0 8px;
-    user-select:none;
-  }
-  .toast{
-    min-height:20px;
-    color:#bdbdd1;
-    font-size:14px;
-    margin-top:10px;
-  }
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#111111" />
 
-  /* Flash overlay for strike removal */
-  #flash{
-    position:absolute;
-    inset:0;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:rgba(0,0,0,.72);
-    font-weight:1000;
-    font-size:34px;
-    letter-spacing:1px;
-    text-transform:uppercase;
-    opacity:0;
-    pointer-events:none;
-  }
-  #flash.show{
-    animation: flashPop 900ms ease-in-out forwards;
-  }
-  @keyframes flashPop{
-    0%   { opacity:0; transform:scale(.95); }
-    15%  { opacity:1; transform:scale(1.02); }
-    60%  { opacity:1; transform:scale(1.00); }
-    100% { opacity:0; transform:scale(.98); }
-  }
-</style>
+  <style>
+    :root{
+      --bg:#0b0b0b;
+      --panel:#121212;
+      --text:#f4f4f4;
+      --muted:#b8b8b8;
+      --green:#5ed17a;
+      --red:#ff4d4d;
+      --amber:#ffd166;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(circle at 50% 20%, #131313 0%, #0a0a0a 55%, #050505 100%);
+      color:var(--text);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      text-align:center;
+    }
+    .wrap{ width:min(520px, 96vw); }
+
+    .card{
+      background: rgba(18,18,18,0.82);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:18px;
+      padding:16px;
+      box-shadow: 0 14px 60px rgba(0,0,0,0.55);
+      backdrop-filter: blur(8px);
+    }
+
+    .title{
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      margin: 8px 0 12px;
+    }
+    .sub{
+      color:var(--muted);
+      line-height:1.35;
+      margin: 0 0 12px;
+      font-size: 1.03rem;
+    }
+
+    .hero{
+      width:100%;
+      border-radius:16px;
+      display:block;
+      margin: 0 auto 14px;
+      border:1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 16px 55px rgba(0,0,0,0.55);
+      max-height: 55vh;
+      object-fit: cover;
+    }
+
+    .btn{
+      width: 100%;
+      border: none;
+      border-radius: 16px;
+      padding: 16px 18px;
+      font-size: 1.4rem;
+      font-weight: 800;
+      background: var(--green);
+      color:#0a0a0a;
+      margin-top: 10px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .btn:active{ transform: scale(0.99); }
+
+    .row{
+      display:flex;
+      gap:10px;
+      justify-content:center;
+      flex-wrap:wrap;
+      margin-top: 10px;
+    }
+    .pill{
+      background: rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.10);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-weight: 700;
+      min-width: 140px;
+    }
+    .pill small{
+      display:block;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom:2px;
+      letter-spacing:0.2px;
+    }
+    .pill .val{
+      font-size: 1.1rem;
+    }
+
+    .gameArea{
+      display:none;
+    }
+
+    .number{
+      font-size: 5.2rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      margin: 18px 0 8px;
+    }
+
+    .tapBtn{
+      width: 100%;
+      border:none;
+      border-radius: 16px;
+      padding: 18px;
+      font-size: 1.55rem;
+      font-weight: 900;
+      background: var(--green);
+      color:#0a0a0a;
+      cursor:pointer;
+      user-select:none;
+      margin-top: 10px;
+    }
+    .tapBtn:active{ transform: scale(0.99); }
+
+    .hint{
+      color: var(--muted);
+      margin-top: 10px;
+      font-size: 1rem;
+      line-height:1.3;
+    }
+
+    /* Overlay message (strike removed, etc.) */
+    .overlay{
+      position: fixed;
+      inset: 0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index: 9998;
+      background: rgba(0,0,0,0.65);
+      padding: 18px;
+    }
+    .overlay .msg{
+      background: rgba(18,18,18,0.92);
+      border:1px solid rgba(255,255,255,0.10);
+      border-radius: 18px;
+      padding: 18px 16px;
+      box-shadow: 0 18px 70px rgba(0,0,0,0.65);
+      width: min(520px, 96vw);
+    }
+    .overlay .msg h2{
+      margin: 0 0 8px;
+      font-size: 2rem;
+      letter-spacing: 0.4px;
+    }
+    .overlay .msg p{
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+
+    /* Motivational popup image */
+    #motivationPopup{
+      position: fixed;
+      left: 50%;
+      top: 14%;
+      transform: translate(-50%, 0);
+      width: min(92vw, 520px);
+      height: auto;
+      z-index: 9999;
+      display: none;
+      border-radius: 16px;
+      box-shadow: 0 16px 60px rgba(0,0,0,0.55);
+      pointer-events: none;
+      border:1px solid rgba(255,255,255,0.10);
+    }
+
+    /* End screen buttons */
+    .btnSecondary{
+      width: 100%;
+      border:1px solid rgba(255,255,255,0.14);
+      border-radius: 16px;
+      padding: 14px 16px;
+      font-size: 1.15rem;
+      font-weight: 800;
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      margin-top: 10px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .btnSecondary:active{ transform: scale(0.99); }
+
+    .err{
+      margin-top: 10px;
+      color: var(--red);
+      font-weight: 800;
+      display:none;
+    }
+  </style>
 </head>
 
 <body>
+  <div class="wrap">
 
-<!-- WELCOME -->
-<div id="welcome" class="card">
-  <img src="welcome.png" alt="Odd-Only Arcade">
-  <h1>Odd-Only Arcade</h1>
-  <p>
-    Numbers (1–999) flash at an erratic cadence.<br><br>
-    <b>Tap ONLY when the number is odd.</b><br>
-    • Tap odd: <b>+1 point</b><br>
-    • Tap even: <b>-1 point</b> + <b>1 strike</b><br>
-    • <b>Miss an odd</b> (it disappears untapped): <b>-1 point</b> + <b>1 strike</b><br><br>
-    <b>3 strikes</b> and you’re out.<br>
-    Every <b>10</b> successfully tapped odds removes <b>1 strike</b> (min 0).
-  </p>
-  <button id="startBtn">START</button>
-</div>
+    <!-- WELCOME / END CARD -->
+    <div id="welcomeCard" class="card">
+      <img id="welcomeImg" class="hero" src="./welcome.png" alt="Odd-Only Arcade" />
+      <div class="title">Odd-Only Arcade</div>
+      <div class="sub">
+        Tap ONLY when the number is <b>odd</b>.<br/>
+        If an <b>odd</b> number disappears without a tap, that’s a <b>strike</b>.<br/>
+        Tap an <b>even</b> number? That’s a <b>strike</b> too.
+      </div>
 
-<!-- GAME -->
-<div id="game" class="card hidden">
-  <div class="hud">
-    <div>Score: <span id="score">0</span></div>
-    <div>Strikes: <span id="strikes">0</span>/3</div>
-    <div>Odd taps: <span id="oddCount">0</span>/10</div>
+      <div class="row">
+        <div class="pill">
+          <small>Score</small>
+          <div class="val" id="welcomeScore">0</div>
+        </div>
+        <div class="pill">
+          <small>Strikes</small>
+          <div class="val" id="welcomeStrikes">0 / 3</div>
+        </div>
+      </div>
+
+      <button id="startBtn" class="btn">START</button>
+      <button id="shareBtn" class="btnSecondary" style="display:none;">Share Score</button>
+
+      <div id="imgErr" class="err">❌ welcome.png failed to load (check filename/path or GitHub Pages cache).</div>
+    </div>
+
+    <!-- GAME CARD -->
+    <div id="gameCard" class="card gameArea">
+      <div class="row">
+        <div class="pill">
+          <small>Score</small>
+          <div class="val" id="scoreEl">0</div>
+        </div>
+        <div class="pill">
+          <small>Strikes</small>
+          <div class="val" id="strikesEl">0 / 3</div>
+        </div>
+        <div class="pill">
+          <small>Streak</small>
+          <div class="val" id="streakEl">0</div>
+        </div>
+      </div>
+
+      <div class="number" id="numberEl">0</div>
+      <button id="tapBtn" class="tapBtn">Tap ONLY if odd</button>
+
+      <div class="hint">
+        Missed odds reduce your score and add a strike.<br/>
+        Every 10 correct odd taps removes 1 strike (min 0).
+      </div>
+    </div>
+
   </div>
 
-  <div id="number">—</div>
+  <!-- Motivational popup -->
+  <img id="motivationPopup" src="./doinggreat.png" alt="Hey, you're doing great!" />
 
-  <button id="tapBtn">Tap ONLY if odd</button>
-  <div id="gameMsg" class="toast"></div>
+  <!-- Overlay message -->
+  <div id="overlay" class="overlay">
+    <div class="msg">
+      <h2 id="overlayTitle">Message</h2>
+      <p id="overlayText">...</p>
+    </div>
+  </div>
 
-  <div id="flash">Strike removed!</div>
-</div>
+  <script>
+    // -----------------------------
+    // Helpers
+    // -----------------------------
+    const $ = (id) => document.getElementById(id);
+    const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
-<!-- GAME OVER -->
-<div id="over" class="card hidden">
-  <img src="welcome.png" alt="Odd-Only Arcade">
-  <h1>Game Over</h1>
-  <p>Final score: <b id="finalScore">0</b></p>
+    // -----------------------------
+    // DOM
+    // -----------------------------
+    const welcomeCard = $("welcomeCard");
+    const gameCard = $("gameCard");
 
-  <button id="shareFinalBtn" class="secondary">Share score</button>
-  <button id="againBtn">Play Again</button>
-  <div id="overMsg" class="toast"></div>
-</div>
+    const startBtn = $("startBtn");
+    const tapBtn = $("tapBtn");
+    const shareBtn = $("shareBtn");
 
-<script>
-  // ---------- ELEMENTS ----------
-  const welcome = document.getElementById("welcome");
-  const game = document.getElementById("game");
-  const over = document.getElementById("over");
+    const numberEl = $("numberEl");
+    const scoreEl = $("scoreEl");
+    const strikesEl = $("strikesEl");
+    const streakEl = $("streakEl");
 
-  const startBtn = document.getElementById("startBtn");
-  const tapBtn = document.getElementById("tapBtn");
-  const againBtn = document.getElementById("againBtn");
-  const shareFinalBtn = document.getElementById("shareFinalBtn");
+    const welcomeScore = $("welcomeScore");
+    const welcomeStrikes = $("welcomeStrikes");
 
-  const numberEl = document.getElementById("number");
-  const scoreEl = document.getElementById("score");
-  const strikesEl = document.getElementById("strikes");
-  const oddCountEl = document.getElementById("oddCount");
-  const finalScoreEl = document.getElementById("finalScore");
+    const welcomeImg = $("welcomeImg");
+    const imgErr = $("imgErr");
 
-  const gameMsg = document.getElementById("gameMsg");
-  const overMsg = document.getElementById("overMsg");
-  const flashEl = document.getElementById("flash");
+    const overlay = $("overlay");
+    const overlayTitle = $("overlayTitle");
+    const overlayText = $("overlayText");
 
-  // ---------- STATE ----------
-  let score = 0;
-  let strikes = 0;
-  let current = null;
+    const motivationEl = $("motivationPopup");
 
-  let timer = null;
-  let running = false;
-  let paused = false;
+    // -----------------------------
+    // Game state
+    // -----------------------------
+    let running = false;
+    let current = 0;
+    let score = 0;
 
-  // For "missed odd" logic
-  let currentOddWasTapped = false;
+    let strikes = 0;
+    const MAX_STRIKES = 3;
 
-  // Prevent multiple scoring taps per shown number
-  let tappedThisNumber = false;
+    let streak = 0;              // consecutive correct odd taps
+    let correctOddCount = 0;      // total correct odds (for strike removal every 10)
 
-  // Count successful odd taps toward strike removal
-  let successfulOddTaps = 0; // 0..10
+    // Control tick cadence (erratic but not too fast)
+    // Each tick picks a random delay between these values.
+    // If you want slower: increase both numbers.
+    const TICK_MIN_MS = 650;
+    const TICK_MAX_MS = 1100;
 
-  // ---------- SPEED CONTROL ----------
-  function nextDelayMs(){
-    const base = 950; // increase to slow down
-    const jitter = (Math.random() * 400) - 200;
-    return Math.max(600, base + jitter);
-  }
+    let tickTimer = null;
 
-  function randInt(min, max){
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-  }
+    // track whether the current odd was successfully tapped before it changed
+    let awaitingOddTap = false;
 
-  function updateHUD(){
-    scoreEl.textContent = String(score);
-    strikesEl.textContent = String(strikes);
-    oddCountEl.textContent = String(successfulOddTaps);
-  }
+    // -----------------------------
+    // Motivational popup scheduling (doinggreat.png)
+    // shows randomly every 31–49 seconds for 1–4 seconds
+    // only during gameplay
+    // -----------------------------
+    let motivationTimer = null;
+    let motivationHideTimer = null;
+    let motivationEnabled = false;
 
-  function stopTimer(){
-    clearTimeout(timer);
-    timer = null;
-  }
+    function clearMotivationTimers(){
+      if (motivationTimer) clearTimeout(motivationTimer);
+      if (motivationHideTimer) clearTimeout(motivationHideTimer);
+      motivationTimer = null;
+      motivationHideTimer = null;
+    }
 
-  function pauseWithFlash(message){
-    paused = true;
-    stopTimer();
+    function scheduleMotivationPopup(){
+      if (!motivationEnabled) return;
 
-    flashEl.textContent = message;
-    flashEl.classList.remove("show");
-    // force reflow so animation restarts reliably
-    void flashEl.offsetWidth;
-    flashEl.classList.add("show");
+      const nextInMs = randInt(31, 49) * 1000;
+      motivationTimer = setTimeout(() => {
+        if (!motivationEnabled) return;
 
-    setTimeout(() => {
-      flashEl.classList.remove("show");
-      paused = false;
-      if (running) tick();
-    }, 900);
-  }
+        motivationEl.style.display = "block";
 
-  // ---------- GAME LOOP ----------
-  function applyMissedOddPenaltyIfNeeded(){
-    // If previous number was odd and it wasn't tapped before disappearing:
-    if (current !== null && (current % 2 === 1) && !currentOddWasTapped){
-      score -= 1;
-      strikes += 1;
-      gameMsg.textContent = "Missed odd: -1 and +1 strike";
+        const durationMs = randInt(1, 4) * 1000;
+        motivationHideTimer = setTimeout(() => {
+          motivationEl.style.display = "none";
+          scheduleMotivationPopup();
+        }, durationMs);
+
+      }, nextInMs);
+    }
+
+    function startMotivationPopups(){
+      motivationEnabled = true;
+      motivationEl.style.display = "none";
+      clearMotivationTimers();
+      scheduleMotivationPopup();
+    }
+
+    function stopMotivationPopups(){
+      motivationEnabled = false;
+      motivationEl.style.display = "none";
+      clearMotivationTimers();
+    }
+
+    // -----------------------------
+    // Overlay helpers
+    // -----------------------------
+    function showOverlay(title, text, durationMs = 900){
+      overlayTitle.textContent = title;
+      overlayText.textContent = text;
+      overlay.style.display = "flex";
+      // pause gameplay timing while overlay is visible
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          overlay.style.display = "none";
+          resolve();
+        }, durationMs);
+      });
+    }
+
+    // -----------------------------
+    // UI updates
+    // -----------------------------
+    function updateHUD(){
+      scoreEl.textContent = String(score);
+      strikesEl.textContent = `${strikes} / ${MAX_STRIKES}`;
+      streakEl.textContent = String(streak);
+
+      welcomeScore.textContent = String(score);
+      welcomeStrikes.textContent = `${strikes} / ${MAX_STRIKES}`;
+    }
+
+    function showWelcome(){
+      gameCard.style.display = "none";
+      welcomeCard.style.display = "block";
+      shareBtn.style.display = "none";
       updateHUD();
-
-      if (strikes >= 3){
-        endGame();
-        return true; // game ended
-      }
-    }
-    return false;
-  }
-
-  function showNextNumber(){
-    // Resolve the previous number outcome before changing it
-    const ended = applyMissedOddPenaltyIfNeeded();
-    if (ended) return;
-
-    current = randInt(1, 999);
-    numberEl.textContent = String(current);
-
-    // Reset per-number flags
-    currentOddWasTapped = false;
-    tappedThisNumber = false;
-  }
-
-  function tick(){
-    if (!running || paused) return;
-    showNextNumber();
-    if (!running || paused) return;
-    timer = setTimeout(tick, nextDelayMs());
-  }
-
-  function startGame(){
-    score = 0;
-    strikes = 0;
-    current = null;
-    currentOddWasTapped = false;
-    tappedThisNumber = false;
-    successfulOddTaps = 0;
-
-    updateHUD();
-    gameMsg.textContent = "";
-    overMsg.textContent = "";
-
-    running = true;
-    paused = false;
-    stopTimer();
-
-    welcome.classList.add("hidden");
-    over.classList.add("hidden");
-    game.classList.remove("hidden");
-
-    tick();
-  }
-
-  function endGame(){
-    if (!running) return;
-
-    running = false;
-    paused = false;
-    stopTimer();
-
-    // If the game ends while an odd is showing and it wasn't tapped, count it as missed:
-    // (This keeps the rule consistent even if game ends mid-cycle.)
-    if (current !== null && (current % 2 === 1) && !currentOddWasTapped){
-      score -= 1;
-      strikes = Math.min(3, strikes + 1);
     }
 
-    finalScoreEl.textContent = String(score);
+    function showGame(){
+      welcomeCard.style.display = "none";
+      gameCard.style.display = "block";
+      updateHUD();
+    }
 
-    game.classList.add("hidden");
-    over.classList.remove("hidden");
-  }
+    // -----------------------------
+    // Game logic
+    // -----------------------------
+    function newNumber(){
+      current = randInt(1, 999);
+      numberEl.textContent = String(current);
 
-  // ---------- INPUT ----------
-  tapBtn.onclick = () => {
-    if (!running || paused || current === null) return;
+      // if it's odd, we expect a tap before it changes
+      awaitingOddTap = (current % 2 !== 0);
+    }
 
-    if (tappedThisNumber) return;
-    tappedThisNumber = true;
+    function scheduleNextTick(){
+      if (!running) return;
 
-    if (current % 2 === 1){
-      // Successful odd tap
-      score += 1;
-      currentOddWasTapped = true;
+      const delay = randInt(TICK_MIN_MS, TICK_MAX_MS);
+      tickTimer = setTimeout(() => {
+        tick();
+      }, delay);
+    }
 
-      successfulOddTaps = Math.min(10, successfulOddTaps + 1);
+    async function tick(){
+      if (!running) return;
 
-      // If we've hit 10 successful odd taps, remove a strike (if any)
-      if (successfulOddTaps >= 10){
-        successfulOddTaps = 0;
+      // If the previous number was odd and it changed without being tapped:
+      // -1 score and +1 strike, streak reset
+      if (awaitingOddTap) {
+        score -= 1;
+        strikes += 1;
+        streak = 0;
+        awaitingOddTap = false;
+        updateHUD();
 
-        if (strikes > 0){
-          strikes -= 1;
-          gameMsg.textContent = "10 odds! Strike removed.";
-          updateHUD();
-          pauseWithFlash("Strike removed!");
+        if (strikes >= MAX_STRIKES) {
+          endGame();
           return;
-        } else {
-          gameMsg.textContent = "10 odds! (No strikes to remove.)";
         }
-      } else {
-        gameMsg.textContent = "Good: +1";
+      }
+
+      newNumber();
+      updateHUD();
+      scheduleNextTick();
+    }
+
+    async function handleCorrectOddTap(){
+      // Player tapped on odd while it was showing
+      score += 1;
+      streak += 1;
+      correctOddCount += 1;
+      awaitingOddTap = false; // consumed
+
+      // Every 10 correct odd taps: remove 1 strike (min 0), pause + message
+      if (correctOddCount % 10 === 0) {
+        if (strikes > 0) {
+          // pause timers briefly
+          clearTimeout(tickTimer);
+
+          strikes = Math.max(0, strikes - 1);
+          updateHUD();
+
+          await showOverlay("STRIKE REMOVED!", "Nice run — one strike has been removed.", 1000);
+
+          // resume cadence
+          scheduleNextTick();
+        }
       }
 
       updateHUD();
-    } else {
-      // Even tap
-      score -= 1;
+    }
+
+    async function handleEvenTap(){
+      // Tap even => strike
       strikes += 1;
-
-      gameMsg.textContent = `Even tap: -1 and +1 strike (${strikes}/3)`;
+      streak = 0;
       updateHUD();
 
-      if (strikes >= 3) endGame();
-    }
-  };
-
-  shareFinalBtn.onclick = async () => {
-    const url = location.href;
-    const text = `Odd-Only Arcade — I scored ${score}. Can you beat it? ${url}`;
-
-    try{
-      if (navigator.share){
-        await navigator.share({ title:"Odd-Only Arcade", text, url });
-        overMsg.textContent = "Shared!";
-        return;
-      }
-    }catch{
-      // fall through
-    }
-
-    try{
-      if (navigator.clipboard && navigator.clipboard.writeText){
-        await navigator.clipboard.writeText(text);
-        overMsg.textContent = "Copied share text!";
+      if (strikes >= MAX_STRIKES) {
+        endGame();
       } else {
-        overMsg.textContent = text;
+        // small feedback pause
+        clearTimeout(tickTimer);
+        await showOverlay("STRIKE!", "That was even. Focus up.", 700);
+        scheduleNextTick();
       }
-    }catch{
-      overMsg.textContent = text;
     }
-  };
 
-  startBtn.onclick = startGame;
-  againBtn.onclick = () => location.reload();
-</script>
+    function startGame(){
+      // reset state
+      running = true;
+      score = 0;
+      strikes = 0;
+      streak = 0;
+      correctOddCount = 0;
+      awaitingOddTap = false;
 
+      showGame();
+      updateHUD();
+
+      // start motivation popups + game cadence
+      startMotivationPopups();
+
+      clearTimeout(tickTimer);
+      newNumber();
+      updateHUD();
+      scheduleNextTick();
+    }
+
+    function endGame(){
+      running = false;
+
+      stopMotivationPopups();
+      clearTimeout(tickTimer);
+      awaitingOddTap = false;
+
+      // Show welcome/end screen again
+      showWelcome();
+
+      // enable share button now that game ended
+      shareBtn.style.display = "block";
+    }
+
+    // -----------------------------
+    // Sharing score (end screen only)
+    // -----------------------------
+    async function shareScore(){
+      const text = `Odd-Only Arcade — I scored ${score} with ${strikes}/${MAX_STRIKES} strikes. Can you beat me?`;
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: "Odd-Only Arcade", text });
+          return;
+        }
+      } catch (e) {
+        // fall through to clipboard
+      }
+
+      try {
+        await navigator.clipboard.writeText(text);
+        alert("Score copied to clipboard — paste into a text!");
+      } catch (e) {
+        // last resort
+        prompt("Copy your score:", text);
+      }
+    }
+
+    // -----------------------------
+    // Events
+    // -----------------------------
+    startBtn.addEventListener("click", () => {
+      startGame();
+    });
+
+    tapBtn.addEventListener("click", async () => {
+      if (!running) return;
+
+      if (current % 2 !== 0) {
+        await handleCorrectOddTap();
+        // Immediately move to next number so taps feel responsive
+        clearTimeout(tickTimer);
+        newNumber();
+        updateHUD();
+        scheduleNextTick();
+      } else {
+        await handleEvenTap();
+      }
+    });
+
+    shareBtn.addEventListener("click", () => {
+      shareScore();
+    });
+
+    // image error handling
+    welcomeImg.addEventListener("error", () => {
+      imgErr.style.display = "block";
+    });
+
+    motivationEl.addEventListener("error", () => {
+      // If doinggreat.png fails, silently disable popups so it doesn't break gameplay
+      stopMotivationPopups();
+    });
+
+    // -----------------------------
+    // Service worker (GitHub Pages safe path)
+    // -----------------------------
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch(() => {});
+      });
+    }
+
+    // initial
+    showWelcome();
+  </script>
 </body>
 </html>
